@@ -1,0 +1,129 @@
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Encryption.Test.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Encryption.Test.pdb
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Encryption.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\nunit.framework.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Encryption.pdb
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\nunit.framework.xml
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\obj\Debug\Encryption.Test.csprojResolveAssemblyReference.cache
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\obj\Debug\Encryption.Test.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\obj\Debug\Encryption.Test.pdb
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\protobuf-net.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Contract.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Newtonsoft.Json.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Contract.pdb
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Newtonsoft.Json.xml
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\TestHelper.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\TestHelper.pdb
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Encryption.Test.dll.config
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\Microsoft.Win32.Primitives.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.AppContext.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Console.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Diagnostics.Tracing.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Globalization.Calendars.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.IO.Compression.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.IO.Compression.ZipFile.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.IO.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.IO.FileSystem.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.IO.FileSystem.Primitives.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Linq.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Linq.Expressions.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Net.Http.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Net.Sockets.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Reflection.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Runtime.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Runtime.Extensions.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.RuntimeInformation.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Algorithms.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Encoding.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Primitives.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Security.Cryptography.X509Certificates.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Text.RegularExpressions.dll
+C:\DEV\NotAnotherMessenger\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.xml
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Encryption.Test.dll.config
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Encryption.Test.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Encryption.Test.pdb
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Contract.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Encryption.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Microsoft.Win32.Primitives.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Newtonsoft.Json.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\nunit.framework.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.AppContext.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Console.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.Tracing.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Globalization.Calendars.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.IO.Compression.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.IO.Compression.ZipFile.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.IO.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.IO.FileSystem.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.IO.FileSystem.Primitives.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Linq.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Linq.Expressions.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Net.Http.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Net.Sockets.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Reflection.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Runtime.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Runtime.Extensions.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.RuntimeInformation.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Algorithms.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Encoding.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Primitives.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.X509Certificates.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Text.RegularExpressions.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\TestHelper.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\protobuf-net.dll
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Contract.pdb
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Encryption.pdb
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\TestHelper.pdb
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\Newtonsoft.Json.xml
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\nunit.framework.xml
+C:\DEV\ECC Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.xml
+C:\DEV\ECC Suite\src\Encryption.Test\obj\Debug\Encryption.Test.csprojResolveAssemblyReference.cache
+C:\DEV\ECC Suite\src\Encryption.Test\obj\Debug\Encryption.Test.dll
+C:\DEV\ECC Suite\src\Encryption.Test\obj\Debug\Encryption.Test.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Encryption.Test.dll.config
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Encryption.Test.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Encryption.Test.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Contract.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Encryption.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Microsoft.Win32.Primitives.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Newtonsoft.Json.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\nunit.framework.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.AppContext.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Console.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.Tracing.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Globalization.Calendars.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.IO.Compression.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.IO.Compression.ZipFile.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.IO.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.IO.FileSystem.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.IO.FileSystem.Primitives.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Linq.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Linq.Expressions.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Net.Http.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Net.Sockets.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Reflection.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Runtime.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Runtime.Extensions.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Runtime.InteropServices.RuntimeInformation.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Algorithms.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Encoding.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.Primitives.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Security.Cryptography.X509Certificates.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Text.RegularExpressions.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\TestHelper.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\protobuf-net.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Contract.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Encryption.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\TestHelper.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\Newtonsoft.Json.xml
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\nunit.framework.xml
+C:\DEV\Encryption-Suite\src\Encryption.Test\bin\Debug\System.Diagnostics.DiagnosticSource.xml
+C:\DEV\Encryption-Suite\src\Encryption.Test\obj\Debug\Encryption.Test.csprojResolveAssemblyReference.cache
+C:\DEV\Encryption-Suite\src\Encryption.Test\obj\Debug\Encryption.Test.dll
+C:\DEV\Encryption-Suite\src\Encryption.Test\obj\Debug\Encryption.Test.pdb

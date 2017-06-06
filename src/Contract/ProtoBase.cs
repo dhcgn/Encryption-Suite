@@ -1,7 +1,7 @@
 using System.IO;
 using ProtoBuf;
 
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     public abstract class ProtoBase<T>
     {

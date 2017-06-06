@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using ProtoBuf;
 
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     [ProtoContract]
     public partial class EcKeyPair : ProtoBase<EcKeyPair>

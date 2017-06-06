@@ -1,4 +1,4 @@
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     public class EcKeyPairInfo
     {
@@ -9,6 +9,6 @@ namespace Contract
         public EcKeyPair PublicKey { get; set; }
         public EcIdentifier EcIdentifier { get; set; }
 
-        public string DisplayName => $"Name: '{this.EcIdentifier?.KeyLabel}' Token: '{TokenLabel}' SN: {EcIdentifier?.TokenSerialNumber}";
+        public string DisplayName => $"Name: '{this.EcIdentifier?.KeyLabel}' Token: '{this.TokenLabel}' SN: {this.EcIdentifier?.TokenSerialNumber}";
     }
 }

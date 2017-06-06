@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Contract;
+using EncryptionSuite.Contract;
 using Net.Pkcs11Interop.Common;
 using Net.Pkcs11Interop.HighLevelAPI;
 using Net.Pkcs11Interop.HighLevelAPI.MechanismParams;
 
-namespace Encryption.NitroKey
+namespace EncryptionSuite.Encryption.NitroKey
 {
     public class EllipticCurveCryptographer
     {

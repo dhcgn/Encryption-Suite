@@ -1,4 +1,4 @@
-﻿namespace TestHelper
+﻿namespace EncryptionSuite.TestHelper
 {
     public static class Constants
     {

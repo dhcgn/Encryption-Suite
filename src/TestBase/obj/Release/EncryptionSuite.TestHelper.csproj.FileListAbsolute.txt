@@ -1,0 +1,7 @@
+C:\DEV\Encryption-Suite\src\TestBase\bin\Release\EncryptionSuite.TestHelper.dll
+C:\DEV\Encryption-Suite\src\TestBase\bin\Release\EncryptionSuite.TestHelper.pdb
+C:\DEV\Encryption-Suite\src\TestBase\bin\Release\nunit.framework.dll
+C:\DEV\Encryption-Suite\src\TestBase\bin\Release\nunit.framework.xml
+C:\DEV\Encryption-Suite\src\TestBase\obj\Release\EncryptionSuite.TestHelper.csprojResolveAssemblyReference.cache
+C:\DEV\Encryption-Suite\src\TestBase\obj\Release\EncryptionSuite.TestHelper.dll
+C:\DEV\Encryption-Suite\src\TestBase\obj\Release\EncryptionSuite.TestHelper.pdb

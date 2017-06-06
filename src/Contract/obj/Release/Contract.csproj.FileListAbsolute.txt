@@ -1,0 +1,8 @@
+C:\DEV\Encryption-Suite\src\Contract\bin\Release\Contract.dll
+C:\DEV\Encryption-Suite\src\Contract\bin\Release\Contract.pdb
+C:\DEV\Encryption-Suite\src\Contract\bin\Release\Newtonsoft.Json.dll
+C:\DEV\Encryption-Suite\src\Contract\bin\Release\protobuf-net.dll
+C:\DEV\Encryption-Suite\src\Contract\bin\Release\Newtonsoft.Json.xml
+C:\DEV\Encryption-Suite\src\Contract\obj\Release\Contract.csprojResolveAssemblyReference.cache
+C:\DEV\Encryption-Suite\src\Contract\obj\Release\Contract.dll
+C:\DEV\Encryption-Suite\src\Contract\obj\Release\Contract.pdb

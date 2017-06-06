@@ -1,0 +1,8 @@
+C:\DEV\NotAnotherMessenger\src\Contract\bin\Debug\Contract.dll
+C:\DEV\NotAnotherMessenger\src\Contract\bin\Debug\Contract.pdb
+C:\DEV\NotAnotherMessenger\src\Contract\bin\Debug\Newtonsoft.Json.dll
+C:\DEV\NotAnotherMessenger\src\Contract\bin\Debug\protobuf-net.dll
+C:\DEV\NotAnotherMessenger\src\Contract\bin\Debug\Newtonsoft.Json.xml
+C:\DEV\NotAnotherMessenger\src\Contract\obj\Debug\Contract.dll
+C:\DEV\NotAnotherMessenger\src\Contract\obj\Debug\Contract.pdb
+C:\DEV\NotAnotherMessenger\src\Contract\obj\Debug\Contract.csprojResolveAssemblyReference.cache

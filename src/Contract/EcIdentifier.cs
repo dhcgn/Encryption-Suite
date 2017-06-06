@@ -1,4 +1,4 @@
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     public class EcIdentifier
     {

@@ -1,13 +1,12 @@
 using System;
 using System.Globalization;
 using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Text;
 using System.Threading;
-using Contract;
+using EncryptionSuite.Contract;
 using NUnit.Framework;
 
-namespace Encryption.Test
+namespace EncryptionSuite.Encryption.Test
 {
     [TestFixture]
     public class EllipticCurveCryptograperTest : TestHelper.Helper

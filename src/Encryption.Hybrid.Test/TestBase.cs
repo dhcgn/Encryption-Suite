@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 
-namespace Encryption.Hybrid.Test
+namespace EncryptionSuite.Encryption.Hybrid.Test
 {
     public class TestBase
     {

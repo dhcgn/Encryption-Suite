@@ -1,9 +1,7 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Security.Cryptography;
-using Contract;
+using EncryptionSuite.Contract;
 
-namespace Encryption
+namespace EncryptionSuite.Encryption
 {
     public class EllipticCurveCryptographer
     {

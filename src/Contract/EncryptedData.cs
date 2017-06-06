@@ -1,6 +1,6 @@
 using ProtoBuf;
 
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     [ProtoContract]
     public class EncryptedData : ProtoBase<EncryptedData>

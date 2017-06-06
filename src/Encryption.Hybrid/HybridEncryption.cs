@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Contract;
+using EncryptionSuite.Contract;
 
-namespace Encryption.Hybrid
+namespace EncryptionSuite.Encryption.Hybrid
 {
     public partial class HybridEncryption
     {

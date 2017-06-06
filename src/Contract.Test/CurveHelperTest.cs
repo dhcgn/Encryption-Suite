@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace Contract.Test
+namespace EncryptionSuite.Contract.Test
 {
     [TestFixture]
     public class CurveHelperTest

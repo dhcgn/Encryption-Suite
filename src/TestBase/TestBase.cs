@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 
-namespace TestHelper
+namespace EncryptionSuite.TestHelper
 {
     public class TestBaseFileOperations
     {

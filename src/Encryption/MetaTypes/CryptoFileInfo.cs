@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Contract;
+using EncryptionSuite.Contract;
 using ProtoBuf;
 
-namespace Encryption
+namespace EncryptionSuite.Encryption.MetaTypes
 {
     [ProtoContract]
     internal class CryptoFileInfo : ProtoBase<CryptoFileInfo>

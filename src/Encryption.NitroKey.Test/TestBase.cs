@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 
-namespace Encryption.NitroKey.Test
+namespace EncryptionSuite.Encryption.NitroKey.Test
 {
     public class TestBase
     {

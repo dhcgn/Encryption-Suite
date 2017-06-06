@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
+using EncryptionSuite.TestHelper;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using TestHelper;
 
-namespace Encryption.NitroKey.Test
+namespace EncryptionSuite.Encryption.NitroKey.Test
 {
     [TestFixture]
     public class EllipticCurveCryptographerTest  : TestHelper.Helper

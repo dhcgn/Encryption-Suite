@@ -1,10 +1,9 @@
 using System.IO;
 using System.Linq;
-using Contract;
+using EncryptionSuite.TestHelper;
 using NUnit.Framework;
-using TestHelper;
 
-namespace Encryption.Hybrid.Test
+namespace EncryptionSuite.Encryption.Hybrid.Test
 {
     [TestFixture]
     public class HybridEncryptionNitrokeyTest : TestBase

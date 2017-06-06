@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 
-namespace Encryption.Test
+namespace EncryptionSuite.Encryption.Test
 {
     [TestFixture]
     public class SymmetricEncryptionTest : TestBase

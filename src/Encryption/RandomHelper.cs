@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Encryption
+namespace EncryptionSuite.Encryption
 {
     public class RandomHelper
     {

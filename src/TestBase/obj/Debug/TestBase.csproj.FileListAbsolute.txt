@@ -1,0 +1,4 @@
+C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\TestBase.dll
+C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\TestBase.pdb
+C:\DEV\NotAnotherMessenger\src\TestBase\obj\Debug\TestBase.dll
+C:\DEV\NotAnotherMessenger\src\TestBase\obj\Debug\TestBase.pdb

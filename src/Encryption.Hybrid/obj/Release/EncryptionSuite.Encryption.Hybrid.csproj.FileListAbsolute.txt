@@ -1,0 +1,16 @@
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.Hybrid.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.Hybrid.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Contract.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.NitroKey.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\protobuf-net.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\Newtonsoft.Json.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\Pkcs11Interop.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Contract.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.NitroKey.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\EncryptionSuite.Encryption.pdb
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\Newtonsoft.Json.xml
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\bin\Release\Pkcs11Interop.xml
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\obj\Release\EncryptionSuite.Encryption.Hybrid.csprojResolveAssemblyReference.cache
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\obj\Release\EncryptionSuite.Encryption.Hybrid.dll
+C:\DEV\Encryption-Suite\src\Encryption.Hybrid\obj\Release\EncryptionSuite.Encryption.Hybrid.pdb

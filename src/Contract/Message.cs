@@ -1,8 +1,7 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using ProtoBuf;
 
-namespace Contract
+namespace EncryptionSuite.Contract
 {
     [ProtoContract]
     public class Message : ProtoBase<Message>

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace TestHelper
+namespace EncryptionSuite.TestHelper
 {
     public class Helper
     {
