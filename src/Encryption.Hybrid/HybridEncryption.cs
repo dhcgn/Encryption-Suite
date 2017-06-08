@@ -9,7 +9,7 @@ namespace EncryptionSuite.Encryption.Hybrid
     {
         public static void Encrypt(Stream input, Stream output, params EcKeyPair[] publicKeys)
         {
-            var secretKey = Random.CreateData(256);
+            var secretKey = Random.CreateData(SymmetricEncryption.AesKeyLength+SymmetricEncryption.HmacKeyLength);
 
             var hybridFileInfo = HybridFileInfo.Create(publicKeys, secretKey);
             var hybridContainerData = hybridFileInfo.ToWire();

@@ -27,7 +27,7 @@ namespace EncryptionSuite.Encryption.Test
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512);
+            var key = Encryption.Random.CreateData(512/8);
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
@@ -64,7 +64,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512);
+            var key = Encryption.Random.CreateData(512/8);
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))

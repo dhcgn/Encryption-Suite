@@ -10,8 +10,8 @@ namespace EncryptionSuite.Encryption
 {
     public class SymmetricEncryption
     {
-        private const int AesKeyLength = 256 / 8;
-        private const int HmacKeyLength = 256 / 8;
+        public const int AesKeyLength = 256 / 8;
+        public const int HmacKeyLength = 256 / 8;
 
         public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secretKey)
         {
