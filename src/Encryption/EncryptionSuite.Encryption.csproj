@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Hash.cs" />
     <Compile Include="MetaTypes\CryptoFileInfo.cs" />
     <Compile Include="EllipticCurveCryptographer.cs" />
     <Compile Include="Random.cs" />

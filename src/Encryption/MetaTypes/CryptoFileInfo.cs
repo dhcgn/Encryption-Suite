@@ -8,9 +8,10 @@ using ProtoBuf;
 namespace EncryptionSuite.Encryption.MetaTypes
 {
     [ProtoContract]
-    internal class CryptoFileInfo : ProtoBase<CryptoFileInfo>
+    public class CryptoFileInfo : ProtoBase<CryptoFileInfo>
     {
-        [ProtoIgnore] public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 159, (byte) 96, (byte) 234, (byte) 202, (byte) 146, (byte) 105, (byte) 123};
+        [ProtoIgnore]
+        public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 159, (byte) 96, (byte) 234, (byte) 202, (byte) 146, (byte) 105, (byte) 123};
 
         [ProtoMember(1)]
         public byte[] Iv { get; set; }
@@ -23,6 +24,9 @@ namespace EncryptionSuite.Encryption.MetaTypes
 
         [ProtoMember(4)]
         public byte[] Hmac { get; set; }
+
+        [ProtoMember(5)]
+        public byte[] EncryptedMetaData { get; set; }
 
         [ProtoMember(Int16.MaxValue)]
         public int Version { get; set; }

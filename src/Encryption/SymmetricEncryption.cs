@@ -1,24 +1,28 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using EncryptionSuite.Contract;
 using EncryptionSuite.Encryption.MetaTypes;
+using ProtoBuf;
 
 namespace EncryptionSuite.Encryption
 {
     public class SymmetricEncryption
     {
-        public static void Decrypt(Stream input, Stream output, byte[] secretKey)
+        public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secretKey)
         {
-            DecryptInternal(input, output, null, secretKey.Take(256 / 8).ToArray());
+            return DecryptInternal(input, output, null, secretKey.Take(256 / 8).ToArray());
         }
 
-        public static void Decrypt(Stream input, Stream output, string password)
+        public static DecryptInfo Decrypt(Stream input, Stream output, string password)
         {
-            DecryptInternal(input, output, password, null);
+            return DecryptInternal(input, output, password, null);
         }
 
-        private static void DecryptInternal(Stream input, Stream output, string password, byte[] secretKey)
+        private static DecryptInfo DecryptInternal(Stream input, Stream output, string password, byte[] secretKey)
         {
+            var result = new DecryptInfo();
+
             byte[] hmacHash;
 
             // BUG: NO file io!
@@ -30,8 +34,14 @@ namespace EncryptionSuite.Encryption
             }
 
             var keyAes = password != null
-                ? CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations)
+                ? Hasher.CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations)
                 : secretKey;
+
+            if (cryptoFileInfo.EncryptedMetaData != null)
+            {
+                var meta = MetaDataFactory.ExtractFroCryptoFileInfom(keyAes, cryptoFileInfo.EncryptedMetaData);
+                result.FileName = meta.Filename;
+            }
 
             using (var tempFile = File.OpenRead(tempPath))
             using (var aes = Aes.Create())
@@ -51,48 +61,57 @@ namespace EncryptionSuite.Encryption
                 }
             }
 
-            if(!cryptoFileInfo.Hmac.SequenceEqual(hmacHash))
+            if (!cryptoFileInfo.Hmac.SequenceEqual(hmacHash))
                 throw new CryptographicException("HMAC Hash not as expected");
 
             File.Delete(tempPath);
+
+            return result;
         }
 
-        public static void Encrypt(Stream input, Stream output, string password)
+        public static void Encrypt(Stream input, Stream output, string password, string filename = null)
         {
-#if DEBUG
-            var iterations = 100;
-#else
-            var iterations = 100000;
-#endif
-            var salt = RandomHelper.GetRandomData(128);
-            var keyAes = CreateAesKeyFromPassword(password, salt, iterations);
+            var cryptoFileInfo = MyCryptoFileInfo.Create();
+            var secretKey = Hasher.CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations);
 
-            var iv = RandomHelper.GetRandomData(128);
+            byte[] encryptedMetaData = null;
+            if (filename != null)
+            {
+                encryptedMetaData = MetaDataFactory.CreateEncryptedMetaData(secretKey, filename);
+            }
 
-            EncryptInternal(input, output, keyAes, iv, salt, iterations);
+            cryptoFileInfo.EncryptedMetaData = encryptedMetaData;
+
+            EncryptInternal(input, output, secretKey, cryptoFileInfo);
         }
 
-        public static void Encrypt(Stream input, Stream output, byte[] secretKey)
+        public static void Encrypt(Stream input, Stream output, byte[] secretKey, string filename = null)
         {
-            var salt = RandomHelper.GetRandomData(128);
-            var keyAes = secretKey.Take(256 / 8).ToArray();
+            var cryptoFileInfo = MyCryptoFileInfo.Create();
 
-            var iv = RandomHelper.GetRandomData(128);
+            byte[] encryptedMetaData = null;
+            if (filename != null)
+            {
+                encryptedMetaData = MetaDataFactory.CreateEncryptedMetaData(secretKey, filename);
+            }
 
-            EncryptInternal(input, output, keyAes, iv, salt, 0);
+            cryptoFileInfo.EncryptedMetaData = encryptedMetaData;
+
+            EncryptInternal(input, output, secretKey, cryptoFileInfo);
         }
 
-        public static void EncryptInternal(Stream input, Stream output, byte[] keyAes, byte[] iv, byte[] salt, int iterations)
+        public static void EncryptInternal(Stream input, Stream output, byte[] keyAes, CryptoFileInfo cryptoFileInfo)
         {
+            keyAes = keyAes.Take(256 / 8).ToArray();
+
             // BUG: NO file io!
-            byte[] hmacHash;
             var tempPath = Path.GetTempFileName();
             using (var tempFile = File.Create(tempPath))
             {
                 using (var aes = Aes.Create())
                 {
                     aes.Key = keyAes;
-                    aes.IV = iv;
+                    aes.IV = cryptoFileInfo.Iv;
 
                     using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                     {
@@ -102,18 +121,10 @@ namespace EncryptionSuite.Encryption
                         {
                             input.CopyTo(aesStream);
                         }
-                        hmacHash = hmacsha512.Hash;
+                        cryptoFileInfo.Hmac = hmacsha512.Hash;
                     }
                 }
             }
-
-            var cryptoFileInfo = new CryptoFileInfo
-            {
-                Iv = iv,
-                Salt = salt,
-                Iterations = iterations,
-                Hmac = hmacHash
-            };
 
             using (var tempStream = File.OpenRead(tempPath))
             {
@@ -121,15 +132,49 @@ namespace EncryptionSuite.Encryption
             }
             File.Delete(tempPath);
         }
+    }
 
-        private static byte[] CreateAesKeyFromPassword(string password, byte[] salt, int iterations)
+    public class MetaDataFactory
+    {
+        public static byte[] CreateEncryptedMetaData(byte[] secretKey, string filename)
         {
-            byte[] keyAes;
-            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations))
+            var metaData = MetaData.CreateFromFilePath(filename);
+            var protoBufData = metaData.ToProtoBufData();
+            var resultStream = new MemoryStream();
+            Encryption.SymmetricEncryption.Encrypt(new MemoryStream(protoBufData), resultStream, secretKey);
+            return resultStream.ToArray();
+        }
+
+        public static MetaData ExtractFroCryptoFileInfom(byte[] secretKey, byte[] encryptedMetaData)
+        {
+            var resultStream = new MemoryStream();
+            Encryption.SymmetricEncryption.Decrypt(new MemoryStream(encryptedMetaData), resultStream, secretKey);
+            return MetaData.FromProtoBufData(resultStream.ToArray());
+        }
+    }
+
+    public class MyCryptoFileInfo : CryptoFileInfo
+    {
+        public static CryptoFileInfo Create()
+        {
+#if DEBUG
+            var iterations = 100;
+#else
+            var iterations = 100000;
+#endif
+
+            var iv = RandomHelper.GetRandomData(128);
+            var salt = RandomHelper.GetRandomData(128);
+
+
+            var cryptoFileInfo = new CryptoFileInfo
             {
-                keyAes = deriveBytes.GetBytes(256 / 8);
-            }
-            return keyAes;
+                Iv = iv,
+                Salt = salt,
+                Iterations = iterations,
+                Hmac = null,
+            };
+            return cryptoFileInfo;
         }
     }
 }
