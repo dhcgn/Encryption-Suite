@@ -14,7 +14,7 @@ namespace EncryptionSuite.Encryption
             byte[] keyAes;
             using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations))
             {
-                keyAes = deriveBytes.GetBytes(256 / 8);
+                keyAes = deriveBytes.GetBytes(512 / 8);
             }
             return keyAes;
         }

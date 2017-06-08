@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using EncryptionSuite.Contract;
@@ -9,13 +10,20 @@ namespace EncryptionSuite.Encryption
 {
     public class SymmetricEncryption
     {
+        private const int AesKeyLength = 256 / 8;
+        private const int HmacKeyLength = 256 / 8;
+
         public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secretKey)
         {
-            return DecryptInternal(input, output, null, secretKey.Take(256 / 8).ToArray());
+            if(secretKey.Length != AesKeyLength+ HmacKeyLength)
+                throw new Exception("Key must be 512 bit long");
+
+            return DecryptInternal(input, output, null, secretKey);
         }
 
         public static DecryptInfo Decrypt(Stream input, Stream output, string password)
         {
+           
             return DecryptInternal(input, output, password, null);
         }
 
@@ -33,13 +41,16 @@ namespace EncryptionSuite.Encryption
                 cryptoFileInfo = CryptoFileInfo.LoadFromDisk(input, rawfile);
             }
 
-            var keyAes = password != null
+            var secret = password != null
                 ? Hasher.CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations)
                 : secretKey;
 
+            var keyAes = secret.Take(AesKeyLength).ToArray();
+            var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
+
             if (cryptoFileInfo.EncryptedMetaData != null)
             {
-                var meta = MetaDataFactory.ExtractFroCryptoFileInfom(keyAes, cryptoFileInfo.EncryptedMetaData);
+                var meta = MetaDataFactory.ExtractFroCryptoFileInfom(secret, cryptoFileInfo.EncryptedMetaData);
                 result.FileName = meta.Filename;
             }
 
@@ -51,7 +62,7 @@ namespace EncryptionSuite.Encryption
 
                 using (var encryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 {
-                    var hmacsha512 = new HMACSHA512(keyAes);
+                    var hmacsha512 = new HMACSHA512(hmacKey);
                     using (var aesStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
                     using (var hmacStream = new CryptoStream(aesStream, hmacsha512, CryptoStreamMode.Write))
                     {
@@ -87,6 +98,9 @@ namespace EncryptionSuite.Encryption
 
         public static void Encrypt(Stream input, Stream output, byte[] secretKey, string filename = null)
         {
+            if (secretKey.Length != 512 / 8)
+                throw new Exception("Key must be 512 bit long");
+
             var cryptoFileInfo = MyCryptoFileInfo.Create();
 
             byte[] encryptedMetaData = null;
@@ -100,9 +114,10 @@ namespace EncryptionSuite.Encryption
             EncryptInternal(input, output, secretKey, cryptoFileInfo);
         }
 
-        public static void EncryptInternal(Stream input, Stream output, byte[] keyAes, CryptoFileInfo cryptoFileInfo)
+        public static void EncryptInternal(Stream input, Stream output, byte[] secret, CryptoFileInfo cryptoFileInfo)
         {
-            keyAes = keyAes.Take(256 / 8).ToArray();
+            var keyAes = secret.Take(AesKeyLength).ToArray();
+            var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
             // BUG: NO file io!
             var tempPath = Path.GetTempFileName();
@@ -115,7 +130,7 @@ namespace EncryptionSuite.Encryption
 
                     using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                     {
-                        var hmacsha512 = new HMACSHA512(keyAes);
+                        var hmacsha512 = new HMACSHA512(hmacKey);
                         using (var hmacStream = new CryptoStream(tempFile, hmacsha512, CryptoStreamMode.Write))
                         using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
                         {
