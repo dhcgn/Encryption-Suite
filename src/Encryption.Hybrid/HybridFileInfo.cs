@@ -20,7 +20,8 @@ namespace EncryptionSuite.Encryption.Hybrid
     [ProtoContract]
     public class HybridFileInfo : ProtoBase<HybridFileInfo>
     {
-        [ProtoIgnore] public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 154, (byte) 65, (byte) 243, (byte) 167, (byte) 5, (byte) 63, (byte) 211};
+        [ProtoIgnore]
+        public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 154, (byte) 65, (byte) 243, (byte) 167, (byte) 5, (byte) 63, (byte) 211};
 
         [ProtoMember(1)]
         public List<DerivedSecret> DerivedSecrets { get; set; }
