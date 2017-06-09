@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -17,20 +18,25 @@ namespace EncryptionSuite.Encryption
 
         public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secret)
         {
-            return DecryptInternal(input, output, secret, null);
+            return DecryptInternal(input, output, secret, null, null);
         }
 
         public static DecryptInfo Decrypt(Stream input, Stream output, string password)
         {
-            return DecryptInternal(input, output, null, password);
+            return DecryptInternal(input, output, null, password, null);
         }
 
         public static void Encrypt(Stream input, Stream output, string password, string filename = null)
         {
             var derivationSettings = PasswordDerivationSettings.Create();
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
-
-            EncryptInternal(input, output, secretKey, derivationSettings, filename);
+            var parameter = new EncryptInternalParameter
+            {
+                Filename = filename,
+                PasswordDerivationSettings = derivationSettings,
+                EllipticCurveEncryptionInformation = null,
+            };
+            EncryptInternal(input, output, secretKey, parameter);
         }
 
         public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null)
@@ -38,12 +44,18 @@ namespace EncryptionSuite.Encryption
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
 
-            EncryptInternal(input, output, secret, null, filename);
+            var parameter = new EncryptInternalParameter
+            {
+                Filename = filename,
+                PasswordDerivationSettings = null,
+                EllipticCurveEncryptionInformation = null,
+            };
+            EncryptInternal(input, output, secret, parameter);
         }
 
         #endregion
 
-        private static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password)
+        internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
             var tempFileName = Path.GetTempFileName();
             InformationContainer informationContainer;
@@ -52,14 +64,17 @@ namespace EncryptionSuite.Encryption
                 informationContainer = SeparateFromInput(tempFileStream, input);
             }
 
-            if (secret == null)
+            if (password!=null)
                 secret = Hasher.CreateAesKeyFromPassword(password, informationContainer.DerivationSettings.Salt, informationContainer.DerivationSettings.Iterations);
+
+            if (parameter?.EllipticCurveDeriveKeyAction != null)
+                secret = parameter?.EllipticCurveDeriveKeyAction(informationContainer.EllipticCurveEncryptionInformation);
 
             SecretInformation decryptedSecretInfo = null;
             if (informationContainer.SecretInformationData != null)
             {
                 var memoryStream = new MemoryStream();
-                DecryptInternal(new MemoryStream(informationContainer.SecretInformationData), memoryStream, secret, null);
+                DecryptInternal(new MemoryStream(informationContainer.SecretInformationData), memoryStream, secret, null, null);
                 decryptedSecretInfo = SecretInformation.FromProtoBufData(memoryStream.ToArray());
             }
 
@@ -74,7 +89,14 @@ namespace EncryptionSuite.Encryption
             };
         }
 
-        private static void EncryptInternal(Stream input, Stream output, byte[] secretKey, PasswordDerivationSettings derivationSettings, string filename)
+        internal class EncryptInternalParameter
+        {
+            public PasswordDerivationSettings PasswordDerivationSettings { get; set; }
+            public string Filename { get; set; }
+            public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
+        }
+
+        internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter=null)
         {
             var tempFileName = Path.GetTempFileName();
 
@@ -85,23 +107,24 @@ namespace EncryptionSuite.Encryption
             }
 
             byte[] secretInformationData = null;
-            if (filename != null)
+            if (parameter?.Filename != null)
             {
-                var secretInformation = new SecretInformation()
+                var secretInformation = new SecretInformation
                 {
-                    Filename = filename,
+                    Filename = parameter.Filename,
                 };
                 var secretInformationPlainData = secretInformation.ToProtoBufData();
                 var encrypted = new MemoryStream();
-                EncryptInternal(new MemoryStream(secretInformationPlainData), encrypted, secretKey, null, null);
+                EncryptInternal(new MemoryStream(secretInformationPlainData), encrypted, secretKey);
                 secretInformationData = encrypted.ToArray();
             }
 
             var fileMetaInfo = new InformationContainer
             {
                 PublicInformation = publicInformation,
-                DerivationSettings = derivationSettings,
+                DerivationSettings = parameter?.PasswordDerivationSettings,
                 SecretInformationData = secretInformationData,
+                EllipticCurveEncryptionInformation = parameter?.EllipticCurveEncryptionInformation,
             };
 
             JoinToOutput(File.OpenRead(tempFileName), output, fileMetaInfo);
@@ -220,6 +243,9 @@ namespace EncryptionSuite.Encryption
 
             [ProtoMember(3)]
             public byte[] SecretInformationData { get; set; }
+
+            [ProtoMember(4)]
+            public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
         }
 
         [ProtoContract]
@@ -262,6 +288,62 @@ namespace EncryptionSuite.Encryption
             public int Iterations { get; internal set; }
         }
 
+        [ProtoContract]
+        public class DerivedSecret
+        {
+            [ProtoMember(1)]
+            public EcKeyPair PublicKey { get; set; }
+
+            [ProtoMember(2)]
+            public byte[] EncryptedSharedSecret { get; set; }
+        }
+
+        [ProtoContract]
+        public class EllipticCurveEncryptionInformation : ProtoBase<EllipticCurveEncryptionInformation>
+        {
+            [ProtoIgnore] public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 154, (byte) 65, (byte) 243, (byte) 167, (byte) 5, (byte) 63, (byte) 211};
+
+            [ProtoMember(1)]
+            public List<DerivedSecret> DerivedSecrets { get; set; }
+
+            [ProtoMember(2)]
+            public EcKeyPair EphemeralKey { get; set; }
+
+            public static EllipticCurveEncryptionInformation Create(EcKeyPair[] publicKeys, byte[] secretKey)
+            {
+                var ephemeralKey = EllipticCurveCryptographer.CreateKeyPair(true);
+
+                var result = new EllipticCurveEncryptionInformation()
+                {
+                    EphemeralKey = ephemeralKey.ExportPublicKey(),
+                };
+
+                result.DerivedSecrets = new List<DerivedSecret>();
+                foreach (var publicKey in publicKeys)
+                {
+                    var deriveSecret = EllipticCurveCryptographer.DeriveSecret(ephemeralKey, publicKey);
+
+                    var input = new MemoryStream(secretKey);
+                    var output = new MemoryStream();
+                    SymmetricEncryption.Encrypt(input, output, deriveSecret);
+
+                    var derivedSecret = new DerivedSecret()
+                    {
+                        PublicKey = publicKey.ExportPublicKey(),
+                        EncryptedSharedSecret = output.ToArray()
+                    };
+                    result.DerivedSecrets.Add(derivedSecret);
+                }
+                return result;
+            }
+        }
+        internal class DecryptInternalParameter
+        {
+            public Func<EllipticCurveEncryptionInformation, byte[]> EllipticCurveDeriveKeyAction { get; set; }
+        }
+
         #endregion
+
+
     }
 }
