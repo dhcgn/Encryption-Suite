@@ -46,7 +46,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Hash.cs" />
-    <Compile Include="MetaTypes\CryptoFileInfo.cs" />
     <Compile Include="EllipticCurveCryptographer.cs" />
     <Compile Include="Random.cs" />
     <Compile Include="RandomHelper.cs" />

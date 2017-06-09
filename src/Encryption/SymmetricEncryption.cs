@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using EncryptionSuite.Contract;
-using EncryptionSuite.Encryption.MetaTypes;
 using ProtoBuf;
 
 namespace EncryptionSuite.Encryption
@@ -199,12 +198,14 @@ namespace EncryptionSuite.Encryption
             return result;
         }
 
+        public static byte[] MagicNumber = {0xDE,0xED, };
+
         private static InformationContainer SeparateFromInput(FileStream tempFileStream, Stream input)
         {
-            byte[] magicData = new byte[CryptoFileInfo.MagicNumber.Count];
+            byte[] magicData = new byte[MagicNumber.Length];
             input.Read(magicData, 0, magicData.Length);
 
-            if (!magicData.SequenceEqual(CryptoFileInfo.MagicNumber))
+            if (!magicData.SequenceEqual(MagicNumber))
                 throw new Exception("File header does not match");
 
             byte[] intData = new byte[4];
@@ -223,7 +224,7 @@ namespace EncryptionSuite.Encryption
         {
             var cryptoFileInfoDate = informationContainer.ToProtoBufData();
 
-            new MemoryStream(CryptoFileInfo.MagicNumber.ToArray()).CopyTo(output);
+            new MemoryStream(MagicNumber.ToArray()).CopyTo(output);
             new MemoryStream(BitConverter.GetBytes(cryptoFileInfoDate.Length)).CopyTo(output);
             new MemoryStream(cryptoFileInfoDate).CopyTo(output);
             tempinputStream.CopyTo(output);
@@ -340,6 +341,11 @@ namespace EncryptionSuite.Encryption
         internal class DecryptInternalParameter
         {
             public Func<EllipticCurveEncryptionInformation, byte[]> EllipticCurveDeriveKeyAction { get; set; }
+        }
+
+        public class DecryptInfo
+        {
+            public string FileName { get; set; }
         }
 
         #endregion

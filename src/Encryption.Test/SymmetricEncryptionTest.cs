@@ -99,7 +99,7 @@ namespace EncryptionSuite.Encryption.Test
                 }
             }
 
-            DecryptInfo info;
+            SymmetricEncryption.DecryptInfo info;
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {
