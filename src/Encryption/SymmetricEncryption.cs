@@ -200,7 +200,7 @@ namespace EncryptionSuite.Encryption
 
         public static byte[] MagicNumber = {0xDE,0xED, };
 
-        private static InformationContainer SeparateFromInput(FileStream tempFileStream, Stream input)
+        internal static InformationContainer SeparateFromInput(Stream ouput, Stream input)
         {
             byte[] magicData = new byte[MagicNumber.Length];
             input.Read(magicData, 0, magicData.Length);
@@ -215,19 +215,19 @@ namespace EncryptionSuite.Encryption
             var protoDate = new byte[intValue];
             input.Read(protoDate, 0, intValue);
 
-            input.CopyTo(tempFileStream);
+            input.CopyTo(ouput);
 
             return InformationContainer.FromProtoBufData(protoDate);
         }
 
-        private static void JoinToOutput(Stream tempinputStream, Stream output, InformationContainer informationContainer)
+        internal static void JoinToOutput(Stream input, Stream output, InformationContainer informationContainer)
         {
             var cryptoFileInfoDate = informationContainer.ToProtoBufData();
 
             new MemoryStream(MagicNumber.ToArray()).CopyTo(output);
             new MemoryStream(BitConverter.GetBytes(cryptoFileInfoDate.Length)).CopyTo(output);
             new MemoryStream(cryptoFileInfoDate).CopyTo(output);
-            tempinputStream.CopyTo(output);
+            input.CopyTo(output);
         }
 
 

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using EncryptionSuite.Contract;
 using NUnit.Framework;
 
@@ -30,7 +31,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512/8);
+            var key = Encryption.Random.CreateData(512 / 8);
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
@@ -75,7 +76,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512/8);
+            var key = Encryption.Random.CreateData(512 / 8);
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
@@ -83,7 +84,7 @@ namespace EncryptionSuite.Encryption.Test
                 switch (secretType)
                 {
                     case EncryptionSecret.Password:
-                        if(withFilename)
+                        if (withFilename)
                             SymmetricEncryption.Encrypt(input, output, pwd, filename);
                         else
                             SymmetricEncryption.Encrypt(input, output, pwd);
@@ -120,12 +121,88 @@ namespace EncryptionSuite.Encryption.Test
             {
                 Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
             }
-            
+
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
             Assert.That(data, Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
         }
+
+        public enum TamperEnum
+        {
+            AesKey,
+            HmacHash,
+            Iv,
+            File,
+            Nothing
+        }
+
+        [TestCase(TamperEnum.AesKey)]
+        [TestCase(TamperEnum.HmacHash)]
+        [TestCase(TamperEnum.Iv)]
+        [TestCase(TamperEnum.File)]
+        [TestCase(TamperEnum.Nothing)]
+        public void TamperTest(TamperEnum tamperEnum)
+        {
+            var key = Encryption.Random.CreateData(512 / 8);
+
+            using (var input = File.OpenRead(this.InputFile))
+            using (var output = File.Create(this.OutputFile))
+            {
+                SymmetricEncryption.EncryptInternal(input, output, key);
+            }
+
+            SymmetricEncryption.InformationContainer informationContainer;
+            byte[] file = null;
+            using (var input = File.OpenRead(this.OutputFile))
+            {
+                var output = new MemoryStream();
+                informationContainer = SymmetricEncryption.SeparateFromInput(output, input);
+                file = output.ToArray();
+            }
+
+            switch (tamperEnum)
+            {
+                case TamperEnum.AesKey:
+                    key[0] ^= key[0];
+                    break;
+                case TamperEnum.HmacHash:
+                    informationContainer.PublicInformation.HmacHash[0] ^= informationContainer.PublicInformation.HmacHash[0];
+                    break;
+                case TamperEnum.Iv:
+                    informationContainer.PublicInformation.IV[0] ^= informationContainer.PublicInformation.IV[0];
+                    break;
+                case TamperEnum.File:
+                    file[0] ^= file[0];
+                    break;
+                case TamperEnum.Nothing:
+                    break;
+            }
+
+            var memoryStream = new MemoryStream();
+            SymmetricEncryption.JoinToOutput(new MemoryStream(file), memoryStream, informationContainer);
+            var tampertFile = memoryStream.ToArray();
+
+            using (var input = new MemoryStream(tampertFile))
+            using (var output = File.Create(this.ResultFile))
+            {
+                switch (tamperEnum)
+                {
+                    case TamperEnum.AesKey:
+                    case TamperEnum.HmacHash:
+                    case TamperEnum.Iv:
+                    case TamperEnum.File:
+                        Assert.Throws<CryptographicException>(() => SymmetricEncryption.DecryptInternal(input, output, key, null, null));
+                        break;
+                    case TamperEnum.Nothing:
+                        Assert.DoesNotThrow(() => SymmetricEncryption.DecryptInternal(input, output, key, null, null));
+                        break;
+                }
+            }
+
+            if (tamperEnum == TamperEnum.Nothing)
+            {
+                Assert.That(File.ReadAllBytes(this.InputFile), Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
+            }
+        }
     }
-
-
 }
