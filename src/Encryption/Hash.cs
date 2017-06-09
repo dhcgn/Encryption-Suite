@@ -11,6 +11,10 @@ namespace EncryptionSuite.Encryption
     {
         public static byte[] CreateAesKeyFromPassword(string password, byte[] salt, int iterations)
         {
+            Console.Out.WriteLine("password:   " + password);
+            Console.Out.WriteLine("salt:       " + Convert.ToBase64String(salt));
+            Console.Out.WriteLine("iterations: " + iterations);
+
             byte[] keyAes;
             using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations))
             {

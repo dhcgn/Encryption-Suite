@@ -19,14 +19,17 @@ namespace EncryptionSuite.Encryption.Test
         }
 
         [Test]
-        [TestCase(EncryptionSecret.Key)]
-        [TestCase(EncryptionSecret.Password)]
-        public void EncryptTest(EncryptionSecret secretType)
+        [TestCase(EncryptionSecret.Key, true)]
+        [TestCase(EncryptionSecret.Password, true)]
+        [TestCase(EncryptionSecret.Key, false)]
+        [TestCase(EncryptionSecret.Password, false)]
+        public void EncryptTest(EncryptionSecret secretType, bool withFilename)
         {
             var data = Guid.NewGuid().ToByteArray();
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
             var key = Encryption.Random.CreateData(512/8);
 
             using (var input = File.OpenRead(this.InputFile))
@@ -35,10 +38,16 @@ namespace EncryptionSuite.Encryption.Test
                 switch (secretType)
                 {
                     case EncryptionSecret.Password:
-                        SymmetricEncryption.Encrypt(input, output, pwd);
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, output, pwd, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, pwd);
                         break;
                     case EncryptionSecret.Key:
-                        SymmetricEncryption.Encrypt(input, output, key);
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, output, key, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, key);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
@@ -55,9 +64,11 @@ namespace EncryptionSuite.Encryption.Test
         }
 
         [Test]
-        [TestCase(EncryptionSecret.Key)]
-        [TestCase(EncryptionSecret.Password)]
-        public void EncryptAndDecryptTest(EncryptionSecret secretType)
+        [TestCase(EncryptionSecret.Key, true)]
+        [TestCase(EncryptionSecret.Password, true)]
+        [TestCase(EncryptionSecret.Key, false)]
+        [TestCase(EncryptionSecret.Password, false)]
+        public void EncryptAndDecryptTest(EncryptionSecret secretType, bool withFilename)
         {
             var data = Guid.NewGuid().ToByteArray();
             File.WriteAllBytes(this.InputFile, data);
@@ -72,16 +83,21 @@ namespace EncryptionSuite.Encryption.Test
                 switch (secretType)
                 {
                     case EncryptionSecret.Password:
-                        SymmetricEncryption.Encrypt(input, output, pwd, filename);
+                        if(withFilename)
+                            SymmetricEncryption.Encrypt(input, output, pwd, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, pwd);
                         break;
                     case EncryptionSecret.Key:
-                        SymmetricEncryption.Encrypt(input, output, key, filename);
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, output, key, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, key);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
                 }
             }
-
 
             DecryptInfo info;
             using (var input = File.OpenRead(this.OutputFile))
@@ -100,8 +116,11 @@ namespace EncryptionSuite.Encryption.Test
                 }
             }
 
-            Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
-
+            if (withFilename)
+            {
+                Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
+            }
+            
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
             Assert.That(data, Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));

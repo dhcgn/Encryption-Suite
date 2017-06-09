@@ -13,141 +13,228 @@ namespace EncryptionSuite.Encryption
         public const int AesKeyLength = 256 / 8;
         public const int HmacKeyLength = 256 / 8;
 
-        public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secretKey)
-        {
-            if(secretKey.Length != AesKeyLength+ HmacKeyLength)
-                throw new Exception("Key must be 512 bit long");
+        #region Public
 
-            return DecryptInternal(input, output, null, secretKey);
+        public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secret)
+        {
+            var tempFileName = Path.GetTempFileName();
+            FileMetaInfo fileMetaInfo;
+            using (var tempFileStream = File.OpenWrite(tempFileName))
+            {
+                fileMetaInfo = SeparateFromInput(tempFileStream, input);
+            }
+
+            using (var tempFileStream = File.OpenRead(tempFileName))
+            {
+                DecryptRaw(tempFileStream, output, secret, fileMetaInfo.EncryptionResult);
+            }
+
+            return null;
         }
 
         public static DecryptInfo Decrypt(Stream input, Stream output, string password)
         {
-           
-            return DecryptInternal(input, output, password, null);
-        }
-
-        private static DecryptInfo DecryptInternal(Stream input, Stream output, string password, byte[] secretKey)
-        {
-            var result = new DecryptInfo();
-
-            byte[] hmacHash;
-
-            // BUG: NO file io!
-            var tempPath = Path.GetTempFileName();
-            CryptoFileInfo cryptoFileInfo;
-            using (var rawfile = File.Create(tempPath))
+            var tempFileName = Path.GetTempFileName();
+            FileMetaInfo fileMetaInfo;
+            using (var tempFileStream = File.OpenWrite(tempFileName))
             {
-                cryptoFileInfo = CryptoFileInfo.LoadFromDisk(input, rawfile);
+                fileMetaInfo = SeparateFromInput(tempFileStream, input);
             }
 
-            var secret = password != null
-                ? Hasher.CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations)
-                : secretKey;
+            var secret = Hasher.CreateAesKeyFromPassword(password, fileMetaInfo.DerivationSettings.Salt, fileMetaInfo.DerivationSettings.Iterations);
+
+            using (var tempFileStream = File.OpenRead(tempFileName))
+            {
+                DecryptRaw(tempFileStream, output, secret, fileMetaInfo.EncryptionResult);
+            }
+
+            return null;
+        }
+
+        public static void Encrypt(Stream input, Stream output, string password, string filename = null)
+        {
+            var derivationSettings = PasswordDerivationSettings.Create();
+            var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
+
+            EncryptInternal(input, output, secretKey, derivationSettings, filename);
+        }
+
+        public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null)
+        {
+            if (secret.Length < AesKeyLength + HmacKeyLength)
+                throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            EncryptInternal(input, output, secret, null, filename);
+        }
+
+        #endregion
+
+        private static void DecryptRaw(Stream input, Stream output, byte[] secret, EncryptionResult encryptionResult)
+        {
+            if (secret.Length < AesKeyLength + HmacKeyLength)
+                throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
 
             var keyAes = secret.Take(AesKeyLength).ToArray();
             var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
-            if (cryptoFileInfo.EncryptedMetaData != null)
-            {
-                var meta = MetaDataFactory.ExtractFroCryptoFileInfom(secret, cryptoFileInfo.EncryptedMetaData);
-                result.FileName = meta.Filename;
-            }
+            // Todo remove
+            Console.Out.WriteLine("keyAes: " + Convert.ToBase64String(keyAes));
 
-            using (var tempFile = File.OpenRead(tempPath))
+            byte[] hmacHash;
+
             using (var aes = Aes.Create())
             {
                 aes.Key = keyAes;
-                aes.IV = cryptoFileInfo.Iv;
+                aes.IV = encryptionResult.IV;
 
                 using (var encryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 {
                     var hmacsha512 = new HMACSHA512(hmacKey);
+
                     using (var aesStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
                     using (var hmacStream = new CryptoStream(aesStream, hmacsha512, CryptoStreamMode.Write))
                     {
-                        tempFile.CopyTo(hmacStream);
+                        input.CopyTo(hmacStream);
                     }
                     hmacHash = hmacsha512.Hash;
                 }
             }
 
-            if (!cryptoFileInfo.Hmac.SequenceEqual(hmacHash))
+            if (!encryptionResult.HmacHash.SequenceEqual(hmacHash))
                 throw new CryptographicException("HMAC Hash not as expected");
-
-            File.Delete(tempPath);
-
-            return result;
         }
 
-        public static void Encrypt(Stream input, Stream output, string password, string filename = null)
-        {
-            var cryptoFileInfo = MyCryptoFileInfo.Create();
-            var secretKey = Hasher.CreateAesKeyFromPassword(password, cryptoFileInfo.Salt, cryptoFileInfo.Iterations);
 
-            byte[] encryptedMetaData = null;
-            if (filename != null)
+        private static void EncryptInternal(Stream input, Stream output, byte[] secretKey, PasswordDerivationSettings derivationSettings, string filename)
+        {
+            var tempFileName = Path.GetTempFileName();
+
+            EncryptionResult encryptionResult;
+            using (var tempFileStream = File.OpenWrite(tempFileName))
             {
-                encryptedMetaData = MetaDataFactory.CreateEncryptedMetaData(secretKey, filename);
+                encryptionResult = EncryptRaw(input, tempFileStream, secretKey);
             }
 
-            cryptoFileInfo.EncryptedMetaData = encryptedMetaData;
 
-            EncryptInternal(input, output, secretKey, cryptoFileInfo);
+
+            var fileMetaInfo = new FileMetaInfo
+            {
+                EncryptionResult = encryptionResult,
+                DerivationSettings = derivationSettings,
+            };
+
+            JoinToOutput(File.OpenRead(tempFileName), output, fileMetaInfo);
         }
 
-        public static void Encrypt(Stream input, Stream output, byte[] secretKey, string filename = null)
+        private static FileMetaInfo SeparateFromInput(FileStream tempFileStream, Stream input)
         {
-            if (secretKey.Length != 512 / 8)
-                throw new Exception("Key must be 512 bit long");
+            byte[] magicData = new byte[CryptoFileInfo.MagicNumber.Count];
+            input.Read(magicData, 0, magicData.Length);
 
-            var cryptoFileInfo = MyCryptoFileInfo.Create();
+            if (!magicData.SequenceEqual(CryptoFileInfo.MagicNumber))
+                throw new Exception("File header does not match");
 
-            byte[] encryptedMetaData = null;
-            if (filename != null)
+            byte[] intData = new byte[4];
+            input.Read(intData, 0, intData.Length);
+            int intValue = BitConverter.ToInt32(intData, 0);
+
+            var protoDate = new byte[intValue];
+            input.Read(protoDate, 0, intValue);
+
+            input.CopyTo(tempFileStream);
+
+            return FileMetaInfo.FromProtoBufData(protoDate);
+        }
+
+        private static void JoinToOutput(Stream tempinputStream, Stream output, FileMetaInfo fileMetaInfo)
+        {
+            var cryptoFileInfoDate = fileMetaInfo.ToProtoBufData();
+
+            new MemoryStream(CryptoFileInfo.MagicNumber.ToArray()).CopyTo(output);
+            new MemoryStream(BitConverter.GetBytes(cryptoFileInfoDate.Length)).CopyTo(output);
+            new MemoryStream(cryptoFileInfoDate).CopyTo(output);
+            tempinputStream.CopyTo(output);
+        }
+
+
+        [ProtoContract]
+        internal class FileMetaInfo : ProtoBase<FileMetaInfo>
+        {
+            [ProtoMember(1)]
+            public EncryptionResult EncryptionResult { get; set; }
+
+            [ProtoMember(2)]
+            public PasswordDerivationSettings DerivationSettings { get; set; }
+        }
+
+        [ProtoContract]
+        internal class EncryptionResult
+        {
+            [ProtoMember(1)]
+            public byte[] IV { get; set; }
+
+            [ProtoMember(2)]
+            public byte[] HmacHash { get; set; }
+        }
+
+        [ProtoContract]
+        internal class PasswordDerivationSettings
+        {
+            public static PasswordDerivationSettings Create()
             {
-                encryptedMetaData = MetaDataFactory.CreateEncryptedMetaData(secretKey, filename);
+                return new PasswordDerivationSettings
+                {
+#if DEBUG
+                    Iterations = 100,
+#else
+                   terations = 100_000;
+#endif
+                    Salt = RandomHelper.GetRandomData(128),
+                };
             }
 
-            cryptoFileInfo.EncryptedMetaData = encryptedMetaData;
+            [ProtoMember(1)]
+            public byte[] Salt { get; internal set; }
 
-            EncryptInternal(input, output, secretKey, cryptoFileInfo);
+            [ProtoMember(2)]
+            public int Iterations { get; internal set; }
         }
 
-        public static void EncryptInternal(Stream input, Stream output, byte[] secret, CryptoFileInfo cryptoFileInfo)
+        internal static EncryptionResult EncryptRaw(Stream input, Stream output, byte[] secret)
         {
+            if (secret.Length < AesKeyLength + HmacKeyLength)
+                throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            var result = new EncryptionResult();
+
             var keyAes = secret.Take(AesKeyLength).ToArray();
             var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
-            // BUG: NO file io!
-            var tempPath = Path.GetTempFileName();
-            using (var tempFile = File.Create(tempPath))
-            {
-                using (var aes = Aes.Create())
-                {
-                    aes.Key = keyAes;
-                    aes.IV = cryptoFileInfo.Iv;
+            // Todo remove
+            Console.Out.WriteLine("keyAes: " + Convert.ToBase64String(keyAes));
 
-                    using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
+
+            using (var aes = Aes.Create())
+            {
+                aes.Key = keyAes;
+                aes.GenerateIV();
+                result.IV = aes.IV;
+
+                using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
+                {
+                    var hmacsha512 = new HMACSHA512(hmacKey);
+                    using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
+                    using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
                     {
-                        var hmacsha512 = new HMACSHA512(hmacKey);
-                        using (var hmacStream = new CryptoStream(tempFile, hmacsha512, CryptoStreamMode.Write))
-                        using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
-                        {
-                            input.CopyTo(aesStream);
-                        }
-                        cryptoFileInfo.Hmac = hmacsha512.Hash;
+                        input.CopyTo(aesStream);
                     }
+                    result.HmacHash = hmacsha512.Hash;
                 }
             }
-
-            using (var tempStream = File.OpenRead(tempPath))
-            {
-                CryptoFileInfo.WriteToDisk(cryptoFileInfo, output, tempStream);
-            }
-            File.Delete(tempPath);
+            return result;
         }
     }
+
 
     public class MetaDataFactory
     {
