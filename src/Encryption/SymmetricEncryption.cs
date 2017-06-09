@@ -63,7 +63,7 @@ namespace EncryptionSuite.Encryption
                 informationContainer = SeparateFromInput(tempFileStream, input);
             }
 
-            if (password!=null)
+            if (password != null)
                 secret = Hasher.CreateAesKeyFromPassword(password, informationContainer.DerivationSettings.Salt, informationContainer.DerivationSettings.Iterations);
 
             if (parameter?.EllipticCurveDeriveKeyAction != null)
@@ -95,7 +95,7 @@ namespace EncryptionSuite.Encryption
             public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
         }
 
-        internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter=null)
+        internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
         {
             var tempFileName = Path.GetTempFileName();
 
@@ -137,9 +137,6 @@ namespace EncryptionSuite.Encryption
             var keyAes = secret.Take(AesKeyLength).ToArray();
             var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
-            // Todo remove
-            Console.Out.WriteLine("keyAes: " + Convert.ToBase64String(keyAes));
-
             byte[] hmacHash;
 
             using (var aes = Aes.Create())
@@ -149,14 +146,15 @@ namespace EncryptionSuite.Encryption
 
                 using (var encryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 {
-                    var hmacsha512 = new HMACSHA512(hmacKey);
-
-                    using (var aesStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
-                    using (var hmacStream = new CryptoStream(aesStream, hmacsha512, CryptoStreamMode.Write))
+                    using (var hmacsha512 = new HMACSHA512(hmacKey))
                     {
-                        input.CopyTo(hmacStream);
+                        using (var aesStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
+                        using (var hmacStream = new CryptoStream(aesStream, hmacsha512, CryptoStreamMode.Write))
+                        {
+                            input.CopyTo(hmacStream);
+                        }
+                        hmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
                     }
-                    hmacHash = hmacsha512.Hash;
                 }
             }
 
@@ -174,10 +172,6 @@ namespace EncryptionSuite.Encryption
             var keyAes = secret.Take(AesKeyLength).ToArray();
             var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
-            // Todo remove
-            Console.Out.WriteLine("keyAes: " + Convert.ToBase64String(keyAes));
-
-
             using (var aes = Aes.Create())
             {
                 aes.Key = keyAes;
@@ -186,19 +180,35 @@ namespace EncryptionSuite.Encryption
 
                 using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                 {
-                    var hmacsha512 = new HMACSHA512(hmacKey);
-                    using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
-                    using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
+                    using (var hmacsha512 = new HMACSHA512(hmacKey))
                     {
-                        input.CopyTo(aesStream);
+                        using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
+                        using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            input.CopyTo(aesStream);
+                        }
+                        result.HmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
                     }
-                    result.HmacHash = hmacsha512.Hash;
                 }
             }
             return result;
         }
 
-        public static byte[] MagicNumber = {0xDE,0xED, };
+        private static byte[] CreateOverallHmacHash(byte[] hmacKey, byte[] hmacsha512Hash, byte[] aesIv)
+        {
+            var output = new MemoryStream();
+            using (var hmacsha512 = new HMACSHA512(hmacKey))
+            {
+                using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
+                {
+                    new MemoryStream(hmacsha512Hash).CopyTo(hmacStream);
+                    new MemoryStream(aesIv).CopyTo(hmacStream);
+                }
+            }
+            return output.ToArray();
+        }
+
+        public static byte[] MagicNumber = {0xDE, 0xED,};
 
         internal static InformationContainer SeparateFromInput(Stream ouput, Stream input)
         {
@@ -338,6 +348,7 @@ namespace EncryptionSuite.Encryption
                 return result;
             }
         }
+
         internal class DecryptInternalParameter
         {
             public Func<EllipticCurveEncryptionInformation, byte[]> EllipticCurveDeriveKeyAction { get; set; }
@@ -349,7 +360,5 @@ namespace EncryptionSuite.Encryption
         }
 
         #endregion
-
-
     }
 }

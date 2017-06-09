@@ -121,6 +121,10 @@ namespace EncryptionSuite.Encryption.Test
             {
                 Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
             }
+            else
+            {
+                Assert.That(info.FileName, Is.Null, "Filename is Null.");
+            }
 
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
@@ -136,11 +140,11 @@ namespace EncryptionSuite.Encryption.Test
             Nothing
         }
 
-        [TestCase(TamperEnum.AesKey)]
-        [TestCase(TamperEnum.HmacHash)]
-        [TestCase(TamperEnum.Iv)]
-        [TestCase(TamperEnum.File)]
-        [TestCase(TamperEnum.Nothing)]
+        [TestCase(TamperEnum.AesKey, TestName = "Tamper AES Key")]
+        [TestCase(TamperEnum.HmacHash, TestName = "Tamper HMAC hash")]
+        [TestCase(TamperEnum.Iv, TestName = "Tamper IV")]
+        [TestCase(TamperEnum.File, TestName = "Tamper encrypted file")]
+        [TestCase(TamperEnum.Nothing, TestName = "Tamper nothing")]
         public void TamperTest(TamperEnum tamperEnum)
         {
             var key = Encryption.Random.CreateData(512 / 8);
@@ -191,7 +195,8 @@ namespace EncryptionSuite.Encryption.Test
                     case TamperEnum.HmacHash:
                     case TamperEnum.Iv:
                     case TamperEnum.File:
-                        Assert.Throws<CryptographicException>(() => SymmetricEncryption.DecryptInternal(input, output, key, null, null));
+                        var ex = Assert.Throws<CryptographicException>(() => SymmetricEncryption.DecryptInternal(input, output, key, null, null));
+                        Console.Out.WriteLine($"Exception: {ex.GetType().Name}, Message: {ex.Message}");
                         break;
                     case TamperEnum.Nothing:
                         Assert.DoesNotThrow(() => SymmetricEncryption.DecryptInternal(input, output, key, null, null));
