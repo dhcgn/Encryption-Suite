@@ -9,6 +9,11 @@ namespace EncryptionSuite.Encryption.Hybrid
     {
         public static void Encrypt(Stream input, Stream output, params EcKeyPair[] publicKeys)
         {
+            Encrypt(input, output, null, null, publicKeys);
+        }
+
+        public static void Encrypt(Stream input, Stream output, Action<double> progress, Func<bool> isCanceled, params EcKeyPair[] publicKeys)
+        {
             var secretKey = Random.CreateData(SymmetricEncryption.AesKeyLength + SymmetricEncryption.HmacKeyLength);
 
             var hybridFileInfo = SymmetricEncryption.EllipticCurveEncryptionInformation.Create(publicKeys, secretKey);
@@ -18,22 +23,26 @@ namespace EncryptionSuite.Encryption.Hybrid
                 Filename = null,
                 PasswordDerivationSettings = null,
                 EllipticCurveEncryptionInformation = hybridFileInfo,
+                Progress = progress,
+                IsCanceled = isCanceled
             };
 
             SymmetricEncryption.EncryptInternal(input, output, secretKey, parameter);
         }
 
-        public static void Decrypt(Stream input, Stream output, EcKeyPair privateKey)
+        public static void Decrypt(Stream input, Stream output, EcKeyPair privateKey, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var parameter = new SymmetricEncryption.DecryptInternalParameter
             {
                 EllipticCurveDeriveKeyAction = information => GetSecretKey(privateKey, information),
+                Progress = progress,
+                IsCanceled = isCanceled
             };
 
             SymmetricEncryption.DecryptInternal(input, output, null, null, parameter);
         }
 
-        public static void Decrypt(Stream input, Stream output, string password)
+        public static void Decrypt(Stream input, Stream output, string password, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var keys = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
 
@@ -47,6 +56,8 @@ namespace EncryptionSuite.Encryption.Hybrid
 
                     return GetSecretKey(ecIdentifier, information, password);
                 },
+                Progress = progress,
+                IsCanceled = isCanceled
             };
 
             SymmetricEncryption.DecryptInternal(input, output, null, null, parameter);

@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace EncryptionSuite.Encryption.Hybrid.Test
 {
     [TestFixture]
-    public class HybridEncryptionTest :  TestBase
+    public class HybridEncryptionTest : TestBase
     {
         [Test]
         public void EncryptMultipleKeys()
@@ -18,6 +18,40 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
             {
                 HybridEncryption.Encrypt(input, output, alice.ExportPublicKey(), bob.ExportPublicKey(), guenther.ExportPublicKey());
             }
+        }
+
+        [Test]
+        public void EncryptWithProgress()
+        {
+            var alice = EllipticCurveCryptographer.CreateKeyPair(true);
+
+            var progressCount = 0;
+            var multiplicity = 10;
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplicity]))
+            using (var output = File.Create(this.OutputFile))
+            {
+                HybridEncryption.Encrypt(input, output, d => progressCount++, () => false, alice.ExportPublicKey());
+            }
+
+            Assert.That(progressCount, Is.EqualTo(multiplicity));
+        }
+
+        [Test]
+        public void EncryptIsCanceled()
+        {
+            var alice = EllipticCurveCryptographer.CreateKeyPair(true);
+
+            var progressCount = 0;
+            var multiplicity = 10;
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplicity]))
+            using (var output = File.Create(this.OutputFile))
+            {
+                HybridEncryption.Encrypt(input, output, d => progressCount++, () => true, alice.ExportPublicKey());
+            }
+
+            Assert.That(progressCount, Is.EqualTo(0));
         }
 
         [Test]
