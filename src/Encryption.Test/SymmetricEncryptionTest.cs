@@ -58,6 +58,38 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
         }
 
+        [Test]
+        public void Encrypt_Progress_Test()
+        {
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+
+            int progressCounter = 0;
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * 10]))
+            using (var output = File.Create(this.OutputFile))
+            {
+                SymmetricEncryption.Encrypt(input, output, pwd, filename, d => progressCounter++, () => false);
+            }
+            Assert.That(progressCounter, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Encrypt_Cancel_Test()
+        {
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+
+            int progressCounter = 0;
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * 10]))
+            using (var output = File.Create(this.OutputFile))
+            {
+                SymmetricEncryption.Encrypt(input, output, pwd, filename, d => progressCounter++, () => true);
+            }
+            Assert.That(progressCounter, Is.EqualTo(0));
+        }
+
         public enum EncryptionSecret
         {
             Password,

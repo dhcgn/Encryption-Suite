@@ -12,20 +12,31 @@ namespace EncryptionSuite.Encryption
     {
         public const int AesKeyLength = 256 / 8;
         public const int HmacKeyLength = 256 / 8;
+        internal const int BufferSize = 81920;
 
         #region Public
 
-        public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secret)
+        public static DecryptInfo Decrypt(Stream input, Stream output, byte[] secret, Action<double> progress = null, Func<bool> isCanceled = null)
         {
-            return DecryptInternal(input, output, secret, null, null);
+            var decryptInternalParameter = new DecryptInternalParameter
+            {
+                Progress = progress,
+                IsCanceled = isCanceled,
+            };
+            return DecryptInternal(input, output, secret, null, decryptInternalParameter);
         }
 
-        public static DecryptInfo Decrypt(Stream input, Stream output, string password)
+        public static DecryptInfo Decrypt(Stream input, Stream output, string password, Action<double> progress = null, Func<bool> isCanceled = null)
         {
-            return DecryptInternal(input, output, null, password, null);
+            var decryptInternalParameter = new DecryptInternalParameter
+            {
+                Progress = progress,
+                IsCanceled = isCanceled,
+            };
+            return DecryptInternal(input, output, null, password, decryptInternalParameter);
         }
 
-        public static void Encrypt(Stream input, Stream output, string password, string filename = null)
+        public static void Encrypt(Stream input, Stream output, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var derivationSettings = PasswordDerivationSettings.Create();
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
@@ -34,11 +45,13 @@ namespace EncryptionSuite.Encryption
                 Filename = filename,
                 PasswordDerivationSettings = derivationSettings,
                 EllipticCurveEncryptionInformation = null,
+                Progress = progress,
+                IsCanceled = isCanceled,
             };
             EncryptInternal(input, output, secretKey, parameter);
         }
 
-        public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null)
+        public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
@@ -48,6 +61,8 @@ namespace EncryptionSuite.Encryption
                 Filename = filename,
                 PasswordDerivationSettings = null,
                 EllipticCurveEncryptionInformation = null,
+                Progress = progress,
+                IsCanceled = isCanceled,
             };
             EncryptInternal(input, output, secret, parameter);
         }
@@ -79,7 +94,7 @@ namespace EncryptionSuite.Encryption
 
             using (var tempFileStream = File.OpenRead(tempFileName))
             {
-                DecryptRaw(tempFileStream, output, secret, informationContainer.PublicInformation);
+                DecryptRaw(tempFileStream, output, secret, informationContainer.PublicInformation, parameter?.Progress, parameter?.IsCanceled);
             }
 
             return new DecryptInfo
@@ -93,6 +108,8 @@ namespace EncryptionSuite.Encryption
             public PasswordDerivationSettings PasswordDerivationSettings { get; set; }
             public string Filename { get; set; }
             public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
+            public Action<double> Progress { get; set; }
+            public Func<bool> IsCanceled { get; set; }
         }
 
         internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
@@ -102,7 +119,7 @@ namespace EncryptionSuite.Encryption
             PublicInformation publicInformation;
             using (var tempFileStream = File.OpenWrite(tempFileName))
             {
-                publicInformation = EncryptRaw(input, tempFileStream, secretKey);
+                publicInformation = EncryptRaw(input, tempFileStream, secretKey, parameter?.Progress, parameter?.IsCanceled);
             }
 
             byte[] secretInformationData = null;
@@ -129,10 +146,13 @@ namespace EncryptionSuite.Encryption
             JoinToOutput(File.OpenRead(tempFileName), output, fileMetaInfo);
         }
 
-        private static void DecryptRaw(Stream input, Stream output, byte[] secret, PublicInformation publicInformation)
+        private static void DecryptRaw(Stream input, Stream output, byte[] secret, PublicInformation publicInformation, Action<double> progress, Func<bool> isCanceled)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            if (isCanceled == null)
+                isCanceled = () => false;
 
             var keyAes = secret.Take(AesKeyLength).ToArray();
             var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
@@ -151,6 +171,15 @@ namespace EncryptionSuite.Encryption
                         using (var aesStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
                         using (var hmacStream = new CryptoStream(aesStream, hmacsha512, CryptoStreamMode.Write))
                         {
+                            byte[] buffer = new byte[BufferSize];
+                            int read;
+                            while ((read = input.Read(buffer, 0, buffer.Length)) > 0 && !isCanceled())
+                            {
+                                hmacStream.Write(buffer, 0, read);
+
+                                progress?.Invoke((double)input.Length / input.Position * 100);
+                            }
+
                             input.CopyTo(hmacStream);
                         }
                         hmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
@@ -162,10 +191,13 @@ namespace EncryptionSuite.Encryption
                 throw new CryptographicException("HMAC Hash not as expected");
         }
 
-        internal static PublicInformation EncryptRaw(Stream input, Stream output, byte[] secret)
+        internal static PublicInformation EncryptRaw(Stream input, Stream output, byte[] secret, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            if (isCanceled == null)
+                isCanceled = () => false;
 
             var result = new PublicInformation();
 
@@ -185,7 +217,14 @@ namespace EncryptionSuite.Encryption
                         using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
                         using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
                         {
-                            input.CopyTo(aesStream);
+                            byte[] buffer = new byte[BufferSize];
+                            int read;
+                            while ((read = input.Read(buffer, 0, buffer.Length)) > 0 && !isCanceled())
+                            {
+                                aesStream.Write(buffer, 0, read);
+
+                                progress?.Invoke((double) input.Length / input.Position * 100);
+                            }
                         }
                         result.HmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
                     }
@@ -352,6 +391,8 @@ namespace EncryptionSuite.Encryption
         internal class DecryptInternalParameter
         {
             public Func<EllipticCurveEncryptionInformation, byte[]> EllipticCurveDeriveKeyAction { get; set; }
+            public Action<double> Progress { get; set; }
+            public Func<bool> IsCanceled { get; set; }
         }
 
         public class DecryptInfo
