@@ -64,7 +64,7 @@ namespace EncryptionSuite.Encryption.Test
             Key
         }
 
-        [Test]
+        [Test(Description = "Encrypt and Decrypt to and from FileStream")]
         [TestCase(EncryptionSecret.Key, true)]
         [TestCase(EncryptionSecret.Password, true)]
         [TestCase(EncryptionSecret.Key, false)]
@@ -129,6 +129,73 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
             Assert.That(data, Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
+        }
+
+        [Test(Description = "Encrypt and Decrypt to and from MemoryStream")]
+        [TestCase(EncryptionSecret.Key, true)]
+        [TestCase(EncryptionSecret.Password, true)]
+        [TestCase(EncryptionSecret.Key, false)]
+        [TestCase(EncryptionSecret.Password, false)]
+        public void EncryptAndDecrypt_MemoryStream_Test(EncryptionSecret secretType, bool withFilename)
+        {
+            var data = Guid.NewGuid().ToByteArray();
+            File.WriteAllBytes(this.InputFile, data);
+
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+            var key = Encryption.Random.CreateData(512 / 8);
+
+            var outputEncrypted = new MemoryStream();
+            using (var input = new MemoryStream(File.ReadAllBytes(this.InputFile)))
+            {
+                switch (secretType)
+                {
+                    case EncryptionSecret.Password:
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, outputEncrypted, pwd, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, outputEncrypted, pwd);
+                        break;
+                    case EncryptionSecret.Key:
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, outputEncrypted, key, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, outputEncrypted, key);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
+                }
+            }
+
+            var outputPlain = new MemoryStream();
+            SymmetricEncryption.DecryptInfo info;
+            using (var input = new MemoryStream(outputEncrypted.ToArray()))
+            {
+                switch (secretType)
+                {
+                    case EncryptionSecret.Password:
+                        info = SymmetricEncryption.Decrypt(input, outputPlain, pwd);
+                        break;
+                    case EncryptionSecret.Key:
+                        info = SymmetricEncryption.Decrypt(input, outputPlain, key);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
+                }
+            }
+
+            if (withFilename)
+            {
+                Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
+            }
+            else
+            {
+                Assert.That(info.FileName, Is.Null, "Filename is Null.");
+            }
+
+            Assert.That(data, Is.Not.EquivalentTo(outputEncrypted.ToArray()));
+            Assert.That(data.Length, Is.LessThan(outputEncrypted.ToArray().Length));
+            Assert.That(data, Is.EquivalentTo(outputPlain.ToArray()));
         }
 
         public enum TamperEnum
