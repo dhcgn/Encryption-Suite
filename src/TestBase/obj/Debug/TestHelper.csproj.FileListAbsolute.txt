@@ -1,7 +1,0 @@
-C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\TestHelper.dll
-C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\TestHelper.pdb
-C:\DEV\NotAnotherMessenger\src\TestBase\obj\Debug\TestHelper.dll
-C:\DEV\NotAnotherMessenger\src\TestBase\obj\Debug\TestHelper.pdb
-C:\DEV\NotAnotherMessenger\src\TestBase\obj\Debug\TestHelper.csprojResolveAssemblyReference.cache
-C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\nunit.framework.dll
-C:\DEV\NotAnotherMessenger\src\TestBase\bin\Debug\nunit.framework.xml
