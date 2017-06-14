@@ -325,7 +325,7 @@ namespace EncryptionSuite.Encryption
 #if DEBUG
                     Iterations = 100,
 #else
-                   terations = 100_000;
+                    Iterations = 100_000,
 #endif
                     Salt = RandomHelper.GetRandomData(128),
                 };
