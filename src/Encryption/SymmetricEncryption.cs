@@ -177,7 +177,7 @@ namespace EncryptionSuite.Encryption
                             {
                                 hmacStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double)input.Length / input.Position * 100);
+                                progress?.Invoke((double)input.Position / input.Length * 100);
                             }
 
                             input.CopyTo(hmacStream);
@@ -223,7 +223,7 @@ namespace EncryptionSuite.Encryption
                             {
                                 aesStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double) input.Length / input.Position * 100);
+                                progress?.Invoke((double) input.Position / input.Length * 100);
                             }
                         }
                         result.HmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using EncryptionSuite.Contract;
@@ -64,14 +65,48 @@ namespace EncryptionSuite.Encryption.Test
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
 
-            int progressCounter = 0;
+            var progressValues = new List<double>();
 
-            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * 10]))
+            var multiplier = 10;
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
             using (var output = File.Create(this.OutputFile))
             {
-                SymmetricEncryption.Encrypt(input, output, pwd, filename, d => progressCounter++, () => false);
+                SymmetricEncryption.Encrypt(input, output, pwd, filename, d => { progressValues.Add(d); }, () => false);
             }
-            Assert.That(progressCounter, Is.EqualTo(10));
+            Assert.That(progressValues.Count, Is.EqualTo(multiplier));
+            Assert.That(progressValues, Is.Ordered);
+            Assert.That(progressValues, Is.Unique);
+            Assert.That(progressValues, Has.None.GreaterThan(100));
+            Assert.That(progressValues, Has.None.LessThan(0));
+        }
+
+        [Test]
+        public void Decrypt_Progress_Test()
+        {
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+
+            var progressValues = new List<double>();
+
+            var multiplier = 10;
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
+            using (var output = File.Create(this.OutputFile))
+            {
+                SymmetricEncryption.Encrypt(input, output, pwd, filename);
+            }
+
+            SymmetricEncryption.DecryptInfo info;
+            using (var input = File.OpenRead(this.OutputFile))
+            using (var output = File.Create(this.ResultFile))
+            {
+                info = SymmetricEncryption.Decrypt(input, output, pwd, d => { progressValues.Add(d); }, () => false);
+            }
+
+            Assert.That(progressValues.Count, Is.EqualTo(multiplier + 1));
+            Assert.That(progressValues, Is.Ordered);
+            Assert.That(progressValues, Is.Unique);
+            Assert.That(progressValues, Has.None.GreaterThan(100));
+            Assert.That(progressValues, Has.None.LessThan(0));
         }
 
         [Test]
