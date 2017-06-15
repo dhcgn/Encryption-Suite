@@ -33,6 +33,7 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
 
             #region Assert
 
+            Assert.That(FileOperation.HasFileSignature(this.OutputFile), "HasFileSignature");
             Assert.Pass("No Exception occur");
 
             #endregion
@@ -80,6 +81,7 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
 
             Assert.That(inputData.Length, Is.LessThan(outputData.Length), "Input file is smaller than output file");
             Assert.That(outputData, Is.Not.EquivalentTo(resultData), "Encrypted file is not equal to plain file");
+            Assert.That(FileOperation.HasFileSignature(this.OutputFile), "HasFileSignature");
             Assert.That(inputData.Length, Is.EqualTo(resultData.Length), "size of plain file is equal to encrypted file");
             Assert.That(inputData, Is.EquivalentTo(resultData), "plain file is equal to encrypted file");
 

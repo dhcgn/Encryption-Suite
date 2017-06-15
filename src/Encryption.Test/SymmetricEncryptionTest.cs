@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using EncryptionSuite.Contract;
 using NUnit.Framework;
 
 namespace EncryptionSuite.Encryption.Test
@@ -21,7 +20,7 @@ namespace EncryptionSuite.Encryption.Test
 
             #region Act
 
-            var result = RandomHelper.GetRandomData(bits);
+            var result = Random.CreateData(bits / 8);
 
             #endregion
 
@@ -81,6 +80,7 @@ namespace EncryptionSuite.Encryption.Test
 
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
+            Assert.That(FileOperation.HasFileSignature(this.OutputFile), "HasFileSignature");
 
             #endregion
         }
@@ -271,6 +271,8 @@ namespace EncryptionSuite.Encryption.Test
 
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
+            Assert.That(FileOperation.HasFileSignature(this.OutputFile), "HasFileSignature");
+
             Assert.That(data, Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
 
             #endregion

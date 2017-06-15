@@ -247,14 +247,14 @@ namespace EncryptionSuite.Encryption
             return output.ToArray();
         }
 
-        public static byte[] MagicNumber = {0xDE, 0xED,};
+      
 
         internal static InformationContainer SeparateFromInput(Stream ouput, Stream input)
         {
-            byte[] magicData = new byte[MagicNumber.Length];
+            byte[] magicData = new byte[Constants.MagicNumberSymmetric.Length];
             input.Read(magicData, 0, magicData.Length);
 
-            if (!magicData.SequenceEqual(MagicNumber))
+            if (!magicData.SequenceEqual(Constants.MagicNumberSymmetric))
                 throw new Exception("File header does not match");
 
             byte[] intData = new byte[4];
@@ -273,7 +273,7 @@ namespace EncryptionSuite.Encryption
         {
             var cryptoFileInfoDate = informationContainer.ToProtoBufData();
 
-            new MemoryStream(MagicNumber.ToArray()).CopyTo(output);
+            new MemoryStream(Constants.MagicNumberSymmetric.ToArray()).CopyTo(output);
             new MemoryStream(BitConverter.GetBytes(cryptoFileInfoDate.Length)).CopyTo(output);
             new MemoryStream(cryptoFileInfoDate).CopyTo(output);
             input.CopyTo(output);
@@ -327,7 +327,7 @@ namespace EncryptionSuite.Encryption
 #else
                     Iterations = 100_000,
 #endif
-                    Salt = RandomHelper.GetRandomData(128),
+                    Salt = Random.CreateData(128/8),
                 };
             }
 
@@ -351,7 +351,7 @@ namespace EncryptionSuite.Encryption
         [ProtoContract]
         public class EllipticCurveEncryptionInformation : ProtoBase<EllipticCurveEncryptionInformation>
         {
-            [ProtoIgnore] public static readonly IReadOnlyList<byte> MagicNumber = new[] {(byte) 154, (byte) 65, (byte) 243, (byte) 167, (byte) 5, (byte) 63, (byte) 211};
+            
 
             [ProtoMember(1)]
             public List<DerivedSecret> DerivedSecrets { get; set; }
