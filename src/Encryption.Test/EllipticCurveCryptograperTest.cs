@@ -21,16 +21,28 @@ namespace EncryptionSuite.Encryption.Test
 
         public void SignDataAndVerifyData()
         {
+            #region Arrange
+
             var plainMsg = Encoding.UTF8.GetBytes("Hello World");
             var keyPair = EllipticCurveCryptographer.CreateKeyPair(true);
+            
+            #endregion
+
+            #region Act
 
             var signature1 = EllipticCurveCryptographer.SignData(keyPair, plainMsg);
             var signature2 = EllipticCurveCryptographer.SignData(keyPair, plainMsg);
+
+            #endregion
+
+            #region Assert
 
             Assert.That(signature1, Is.Not.EquivalentTo(signature2), "Signature #1 and #2 are NOT equal");
 
             Assert.That(EllipticCurveCryptographer.VerifyData(keyPair.ExportPublicKey(), plainMsg, signature1), "Signature of #1 is valid");
             Assert.That(EllipticCurveCryptographer.VerifyData(keyPair.ExportPublicKey(), plainMsg, signature2), "Signature of #2 is valid");
+
+            #endregion
         }
 
         [Test]
@@ -38,7 +50,19 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(false, Description = "Include no Private Key")]
         public void CreateKeyPair(bool includePrivateParameters)
         {
+            #region Arrange
+
+            // See method arguments
+
+            #endregion
+
+            #region Act
+
             var keyPair = EllipticCurveCryptographer.CreateKeyPair(includePrivateParameters);
+
+            #endregion
+
+            #region Assert
 
             Console.Out.WriteLine($"----------- json ({keyPair.ToJson.Length})------------");
             Console.Out.WriteLine(keyPair.ToJson);
@@ -50,6 +74,10 @@ namespace EncryptionSuite.Encryption.Test
             Console.Out.WriteLine(base.ToHexString(keyPair.ToAns1()));
             Console.Out.WriteLine($"----------- ToDre ({keyPair.ToDre().Length})------------");
             Console.Out.WriteLine(base.ToHexString(keyPair.ToDre()));
+
+            Assert.Pass("No Exception");
+
+            #endregion
         }
 
         [Test]
@@ -57,15 +85,32 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(false, Description = "Include no Private Key")]
         public void CreateKeyPair_FromJson(bool includePrivateParameters)
         {
+            #region Arrange
+
+            // See method arguments
+
+            #endregion
+
+            #region Act
+
             var keyPair = EllipticCurveCryptographer.CreateKeyPair(includePrivateParameters);
             var fromJson = EcKeyPair.FromJson(keyPair.ToJson);
+            
+            #endregion
+
+            #region Assert
 
             Console.Out.WriteLine(fromJson.ToJson);
+            Assert.Pass("No Exception");
+
+            #endregion
         }
 
         [Test]
         public void DeriveSecret()
         {
+            #region Arrange
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
             var bob = EllipticCurveCryptographer.CreateKeyPair(true);
 
@@ -75,8 +120,16 @@ namespace EncryptionSuite.Encryption.Test
                 rngCsp.GetBytes(salt);
             }
 
+            #endregion
+
+            #region Act
+
             var derivedSecret1 = EllipticCurveCryptographer.DeriveSecret(alice, bob.ExportPublicKey());
             var derivedSecret2 = EllipticCurveCryptographer.DeriveSecret(bob, alice.ExportPublicKey());
+
+            #endregion
+
+            #region Assert
 
             Console.Out.WriteLine($"derivedSecret length: {derivedSecret1?.Length * 8} bit");
 
@@ -87,9 +140,8 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(derivedSecret2, Has.Length.GreaterThan(0));
 
             Assert.That(derivedSecret1, Is.EquivalentTo(derivedSecret2));
+            
+            #endregion
         }
-
-
-
     }
 }

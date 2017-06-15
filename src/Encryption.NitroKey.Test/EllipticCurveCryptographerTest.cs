@@ -7,12 +7,23 @@ using NUnit.Framework;
 namespace EncryptionSuite.Encryption.NitroKey.Test
 {
     [TestFixture]
-    public class EllipticCurveCryptographerTest  : TestHelper.Helper
+    public class EllipticCurveCryptographerTest : TestHelper.Helper
     {
         [Test]
         public void ExtractPublicKey()
         {
+            #region Arrange
+
+            #endregion
+
+            #region Act
+
             var result = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey("Brainpool #1", Constants.TestPin);
+
+            #endregion
+
+            #region Assert
+
             Console.Out.WriteLine(result.ToJson);
 
             Console.Out.WriteLine(base.ToHexString(result.PublicKey.Qx));
@@ -25,27 +36,49 @@ namespace EncryptionSuite.Encryption.NitroKey.Test
             Assert.That(base.ToHexString(result.PublicKey.Qy), Is.EqualTo("a53efad266c8642c6877b8b215d091ba687acafd3c33f35ffb5ca6aadaf248ef1a126cd55e0d0598"));
 
             Assert.DoesNotThrow(() => result.CreateECParameters());
+
+            #endregion
         }
 
         [Test]
         public void Create_ECDiffieHellman()
         {
-            var result = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey("Brainpool #1", Constants.TestPin);
-            Console.Out.WriteLine(result.ToJson);
+            #region Arrange
 
+            #endregion
+
+            #region Act
+
+            var result = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey("Brainpool #1", Constants.TestPin);
+
+            #endregion
+
+            #region Assert
+
+            Console.Out.WriteLine(result.ToJson);
             Assert.DoesNotThrow(() => ECDiffieHellman.Create(result.CreateECParameters()));
+
+            #endregion
         }
 
         [Test]
         public void DeriveSecretWithHsm()
         {
+            #region Arrange
+
             var alice = Encryption.EllipticCurveCryptographer.CreateKeyPair(true);
             var bob = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey("Brainpool #1", Constants.TestPin);
 
-            var salt = Random.CreateSalt();
+            #endregion
+
+            #region Act
 
             var derivedSecret1 = Encryption.EllipticCurveCryptographer.DeriveSecret(alice, bob.ExportPublicKey());
             var derivedSecret2 = Encryption.NitroKey.EllipticCurveCryptographer.DeriveSecret("Brainpool #1", alice.ExportPublicKey(), Constants.TestPin);
+
+            #endregion
+
+            #region Assert
 
             Console.Out.WriteLine($"derivedSecret NET length: {derivedSecret1?.Length * 8} bit");
             Console.Out.WriteLine($"derivedSecret HSM length: {derivedSecret2?.Length * 8} bit");
@@ -57,33 +90,55 @@ namespace EncryptionSuite.Encryption.NitroKey.Test
             Assert.That(derivedSecret2, Has.Length.GreaterThan(0));
 
             Assert.That(derivedSecret1, Is.EquivalentTo(derivedSecret2));
+
+            #endregion
         }
 
         [Test]
         public void DeriveSecretWithoutHsm()
         {
+            #region Arrange
+
             var alice = Encryption.EllipticCurveCryptographer.CreateKeyPair(true);
             var bob = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey("Brainpool #1", Constants.TestPin);
+            
+            #endregion
 
-            var salt = Random.CreateSalt();
+            #region Act
 
             var derivedSecret1 = Encryption.EllipticCurveCryptographer.DeriveSecret(alice, bob.ExportPublicKey());
+            
+            #endregion
+
+            #region Assert
 
             Console.Out.WriteLine($"derivedSecret length: {derivedSecret1?.Length * 8} bit");
             Console.Out.WriteLine($"derivedSecret1 : {Convert.ToBase64String(derivedSecret1).Substring(0, 16)} ...");
 
             Assert.That(derivedSecret1, Has.Length.GreaterThan(0));
+            
+            #endregion
         }
 
         [Test]
         public void GetEcKeyPairInfos()
         {
+            #region Arrange
+
+            #endregion
+
+            #region Act
+
             var tokens = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
+
+            #endregion
+
+            #region Assert
 
             for (var index = 0; index < tokens.Length; index++)
             {
                 var token = tokens[index];
-                Console.Out.WriteLine($"{index+1}. " + "\r\n"+
+                Console.Out.WriteLine($"{index + 1}. " + "\r\n" +
                                       $"Label:       {token.EcIdentifier.KeyLabel}, " + "\r\n" +
                                       $"EC Params:   {base.ToHexString(token.ECParamsData)}" + "\r\n" +
                                       $"Curve Desc:  {token.CurveDescription}" + "\r\n" +
@@ -94,9 +149,11 @@ namespace EncryptionSuite.Encryption.NitroKey.Test
                                       $"{token.PublicKey.ToArmor()}");
             }
 
-            Console.WriteLine(JsonConvert.SerializeObject(tokens,Formatting.Indented));
+            Console.WriteLine(JsonConvert.SerializeObject(tokens, Formatting.Indented));
 
             Assert.That(tokens.Length, Is.GreaterThan(0));
+
+            #endregion
         }
     }
 }
