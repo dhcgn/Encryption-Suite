@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -161,6 +162,50 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
             Assert.That(outputData, Is.Not.EquivalentTo(resultData), "Encrypted file is not equal to plain file");
             Assert.That(inputData.Length, Is.EqualTo(resultData.Length), "size of plain file is equal to encrypted file");
             Assert.That(inputData, Is.EquivalentTo(resultData), "plain file is equal to encrypted file");
+
+            #endregion
+        }
+
+        [Test]
+        public void EncryptAndDecryptWithFilename()
+        {
+            #region Arrange
+
+            var alice = EllipticCurveCryptographer.CreateKeyPair(true);
+
+            var encryptionParameter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] { alice.ExportPublicKey() },
+                Filename = Guid.NewGuid().ToString(),
+            };
+
+            var decryptionParameter = new HybridEncryption.DecryptionParameter()
+            {
+                PrivateKey = alice,
+            };
+
+            #endregion
+
+            #region Act
+
+            using (var input = File.OpenRead(this.InputFile))
+            using (var output = File.Create(this.OutputFile))
+            {
+                HybridEncryption.Encrypt(input, output, encryptionParameter);
+            }
+
+            SymmetricEncryption.DecryptInfo info;
+            using (var input = File.OpenRead(this.OutputFile))
+            using (var output = File.Create(this.ResultFile))
+            {
+                info = HybridEncryption.Decrypt(input, output, decryptionParameter);
+            }
+
+            #endregion
+
+            #region Assert
+
+            Assert.That(encryptionParameter.Filename, Is.EqualTo(info.FileName), "is decrypted filename equal to input filename");
 
             #endregion
         }

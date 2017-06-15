@@ -14,6 +14,7 @@ namespace EncryptionSuite.Encryption.Hybrid
 
             public Func<bool> IsCanceled { get; set; } = () => false;
             public Action<double> Progress { get; set; }
+            public string Filename { get; set; }
         }
 
         public class DecryptionParameter
@@ -33,7 +34,7 @@ namespace EncryptionSuite.Encryption.Hybrid
 
             var internalParameter = new SymmetricEncryption.EncryptInternalParameter
             {
-                Filename = null,
+                Filename = parameter.Filename,
                 PasswordDerivationSettings = null,
                 EllipticCurveEncryptionInformation = hybridFileInfo,
                 Progress = parameter.Progress,
@@ -43,7 +44,7 @@ namespace EncryptionSuite.Encryption.Hybrid
             SymmetricEncryption.EncryptInternal(input, output, secretKey, internalParameter);
         }
 
-        public static void Decrypt(Stream input, Stream output, DecryptionParameter parameter)
+        public static SymmetricEncryption.DecryptInfo Decrypt(Stream input, Stream output, DecryptionParameter parameter)
         {
             byte[] DeriveSecretFromHsm(SymmetricEncryption.EllipticCurveEncryptionInformation information)
             {
@@ -62,7 +63,7 @@ namespace EncryptionSuite.Encryption.Hybrid
                 IsCanceled = parameter.IsCanceled
             };
 
-            SymmetricEncryption.DecryptInternal(input, output, null, null, internalParameter);
+            return SymmetricEncryption.DecryptInternal(input, output, null, null, internalParameter);
         }
 
         private static byte[] GetSecretKey(EcIdentifier ecIdentifier, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo, string password)
