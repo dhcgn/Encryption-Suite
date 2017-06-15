@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EncryptionSuite.Contract;
@@ -7,60 +8,61 @@ namespace EncryptionSuite.Encryption.Hybrid
 {
     public class HybridEncryption
     {
-        public static void Encrypt(Stream input, Stream output, params EcKeyPair[] publicKeys)
+        public class EncryptionParameter
         {
-            Encrypt(input, output, null, null, publicKeys);
+            public IEnumerable<EcKeyPair> PublicKeys { get; set; }
+
+            public Func<bool> IsCanceled { get; set; } = () => false;
+            public Action<double> Progress { get; set; }
         }
 
-        public static void Encrypt(Stream input, Stream output, Action<double> progress, Func<bool> isCanceled, params EcKeyPair[] publicKeys)
+        public class DecryptionParameter
+        {
+            public string Password { get; set; }
+            public EcKeyPair PrivateKey { get; set; }
+
+            public Func<bool> IsCanceled { get; set; } = () => false;
+            public Action<double> Progress { get; set; }
+        }
+
+        public static void Encrypt(Stream input, Stream output, EncryptionParameter parameter)
         {
             var secretKey = Random.CreateData(SymmetricEncryption.AesKeyLength + SymmetricEncryption.HmacKeyLength);
 
-            var hybridFileInfo = SymmetricEncryption.EllipticCurveEncryptionInformation.Create(publicKeys, secretKey);
+            var hybridFileInfo = SymmetricEncryption.EllipticCurveEncryptionInformation.Create(parameter.PublicKeys, secretKey);
 
-            var parameter = new SymmetricEncryption.EncryptInternalParameter
+            var internalParameter = new SymmetricEncryption.EncryptInternalParameter
             {
                 Filename = null,
                 PasswordDerivationSettings = null,
                 EllipticCurveEncryptionInformation = hybridFileInfo,
-                Progress = progress,
-                IsCanceled = isCanceled
+                Progress = parameter.Progress,
+                IsCanceled = parameter.IsCanceled
             };
 
-            SymmetricEncryption.EncryptInternal(input, output, secretKey, parameter);
+            SymmetricEncryption.EncryptInternal(input, output, secretKey, internalParameter);
         }
 
-        public static void Decrypt(Stream input, Stream output, EcKeyPair privateKey, Action<double> progress = null, Func<bool> isCanceled = null)
+        public static void Decrypt(Stream input, Stream output, DecryptionParameter parameter)
         {
-            var parameter = new SymmetricEncryption.DecryptInternalParameter
+            byte[] DeriveSecretFromHsm(SymmetricEncryption.EllipticCurveEncryptionInformation information)
             {
-                EllipticCurveDeriveKeyAction = information => GetSecretKey(privateKey, information),
-                Progress = progress,
-                IsCanceled = isCanceled
+                var keys = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
+                var ecIdentifier = keys.FirstOrDefault(info => information.DerivedSecrets.Any(secret => info.PublicKey.ToAns1().SequenceEqual(secret.PublicKey.ToAns1())))?.EcIdentifier;
+                if (ecIdentifier == null)
+                    throw new Exception("Couldn't find any key on any token");
+
+                return GetSecretKey(ecIdentifier, information, parameter.Password);
+            }
+
+            var internalParameter = new SymmetricEncryption.DecryptInternalParameter
+            {
+                EllipticCurveDeriveKeyAction = information => parameter.PrivateKey == null ? DeriveSecretFromHsm(information) : GetSecretKey(parameter.PrivateKey, information),
+                Progress = parameter.Progress,
+                IsCanceled = parameter.IsCanceled
             };
 
-            SymmetricEncryption.DecryptInternal(input, output, null, null, parameter);
-        }
-
-        public static void Decrypt(Stream input, Stream output, string password, Action<double> progress = null, Func<bool> isCanceled = null)
-        {
-            var keys = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
-
-            var parameter = new SymmetricEncryption.DecryptInternalParameter
-            {
-                EllipticCurveDeriveKeyAction = information =>
-                {
-                    var ecIdentifier = keys.FirstOrDefault(info => information.DerivedSecrets.Any(secret => info.PublicKey.ToAns1().SequenceEqual(secret.PublicKey.ToAns1())))?.EcIdentifier;
-                    if (ecIdentifier == null)
-                        throw new Exception("Couldn't find any key on any token");
-
-                    return GetSecretKey(ecIdentifier, information, password);
-                },
-                Progress = progress,
-                IsCanceled = isCanceled
-            };
-
-            SymmetricEncryption.DecryptInternal(input, output, null, null, parameter);
+            SymmetricEncryption.DecryptInternal(input, output, null, null, internalParameter);
         }
 
         private static byte[] GetSecretKey(EcIdentifier ecIdentifier, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo, string password)

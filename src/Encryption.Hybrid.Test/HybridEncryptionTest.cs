@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 
@@ -9,67 +10,148 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
         [Test]
         public void EncryptMultipleKeys()
         {
+            #region Arrange
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
             var bob = EllipticCurveCryptographer.CreateKeyPair(true);
             var guenther = EllipticCurveCryptographer.CreateKeyPair(true);
 
+            var paramter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] {alice, bob, guenther}
+            };
+
+            #endregion
+
+            #region Act
+
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
             {
-                HybridEncryption.Encrypt(input, output, alice.ExportPublicKey(), bob.ExportPublicKey(), guenther.ExportPublicKey());
+                HybridEncryption.Encrypt(input, output, paramter);
             }
+
+            #endregion
+
+            #region Assert
+
+            Assert.Pass("No Exception occur");
+
+            #endregion
         }
 
         [Test]
         public void EncryptWithProgress()
         {
+            #region Arrange 
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
 
-            var progressCount = 0;
-            var multiplicity = 10;
+            var progressValues = new List<double>();
+            var multiplier = 10;
 
-            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplicity]))
+            var paramter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] {alice},
+                Progress = d => progressValues.Add(d),
+                IsCanceled = () => false,
+            };
+
+            #endregion
+
+            #region Act 
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
             using (var output = File.Create(this.OutputFile))
             {
-                HybridEncryption.Encrypt(input, output, d => progressCount++, () => false, alice.ExportPublicKey());
+                HybridEncryption.Encrypt(input, output, paramter);
             }
 
-            Assert.That(progressCount, Is.EqualTo(multiplicity));
+            #endregion
+
+            #region Assert 
+
+            Assert.That(progressValues.Count, Is.EqualTo(multiplier));
+            Assert.That(progressValues, Is.Ordered);
+            Assert.That(progressValues, Is.Unique);
+            Assert.That(progressValues, Has.None.GreaterThan(100));
+            Assert.That(progressValues, Has.None.LessThan(0));
+
+            #endregion
         }
 
         [Test]
         public void EncryptIsCanceled()
         {
+            #region Arrange
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
 
-            var progressCount = 0;
-            var multiplicity = 10;
+            var progressValues = new List<double>();
+            var multiplier = 10;
 
-            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplicity]))
+            var paramter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] { alice },
+                Progress = d => progressValues.Add(d),
+                IsCanceled = () => true,
+            };
+
+            #endregion
+
+            #region Act
+
+            using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
             using (var output = File.Create(this.OutputFile))
             {
-                HybridEncryption.Encrypt(input, output, d => progressCount++, () => true, alice.ExportPublicKey());
+                HybridEncryption.Encrypt(input, output, paramter);
             }
 
-            Assert.That(progressCount, Is.EqualTo(0));
+            #endregion
+
+            #region Assert
+
+            Assert.That(progressValues.Count, Is.EqualTo(0));
+
+            #endregion
         }
 
         [Test]
         public void EncryptAndDecrypt()
         {
+            #region Arrange
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
+
+            var encryptionParameter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] { alice.ExportPublicKey() },
+            };
+
+            var decryptionParameter = new HybridEncryption.DecryptionParameter()
+            {
+                PrivateKey = alice,
+            };
+
+            #endregion
+
+            #region Act
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
             {
-                HybridEncryption.Encrypt(input, output, alice.ExportPublicKey());
+                HybridEncryption.Encrypt(input, output, encryptionParameter);
             }
 
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {
-                HybridEncryption.Decrypt(input, output, alice);
+                HybridEncryption.Decrypt(input, output, decryptionParameter);
             }
+
+            #endregion
+
+            #region Assert
 
             var inputData = File.ReadAllBytes(this.InputFile);
             var outputData = File.ReadAllBytes(this.OutputFile);
@@ -79,35 +161,70 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
             Assert.That(outputData, Is.Not.EquivalentTo(resultData), "Encrypted file is not equal to plain file");
             Assert.That(inputData.Length, Is.EqualTo(resultData.Length), "size of plain file is equal to encrypted file");
             Assert.That(inputData, Is.EquivalentTo(resultData), "plain file is equal to encrypted file");
+
+            #endregion
         }
 
         [Test]
         public void EncryptAndDecryptMultipleKeys()
         {
+            #region Arrange
+
             var alice = EllipticCurveCryptographer.CreateKeyPair(true);
             var bob = EllipticCurveCryptographer.CreateKeyPair(true);
             var guenther = EllipticCurveCryptographer.CreateKeyPair(true);
 
+            var encryptionParameter = new HybridEncryption.EncryptionParameter()
+            {
+                PublicKeys = new[] { alice.ExportPublicKey(), bob.ExportPublicKey(),guenther.ExportPublicKey() },
+            };
+
+            #endregion
+
+            #region Act
+
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
             {
-                HybridEncryption.Encrypt(input, output, alice.ExportPublicKey(), bob.ExportPublicKey(), guenther.ExportPublicKey());
+                HybridEncryption.Encrypt(input, output, encryptionParameter);
             }
 
-            using (var input = File.OpenRead(this.OutputFile))
-            using (var output = File.Create(this.ResultFile))
+            #endregion
+
+            foreach (var ecKeyPair in new[] { alice, bob, guenther})
             {
-                HybridEncryption.Decrypt(input, output, alice);
+                #region Arrange
+
+                var decryptionParameter = new HybridEncryption.DecryptionParameter()
+                {
+                    PrivateKey = ecKeyPair,
+                };
+
+                #endregion
+
+                #region Act
+
+                using (var input = File.OpenRead(this.OutputFile))
+                using (var output = File.Create(this.ResultFile))
+                {
+                    HybridEncryption.Decrypt(input, output, decryptionParameter);
+                }
+
+                #endregion
+
+                #region Assert
+
+                var inputData = File.ReadAllBytes(this.InputFile);
+                var outputData = File.ReadAllBytes(this.OutputFile);
+                var resultData = File.ReadAllBytes(this.ResultFile);
+
+                Assert.That(inputData.Length, Is.LessThan(outputData.Length), "Input file is smaller than output file");
+                Assert.That(outputData, Is.Not.EquivalentTo(resultData), "Encrypted file is not equal to plain file");
+                Assert.That(inputData.Length, Is.EqualTo(resultData.Length), "size of plain file is equal to encrypted file");
+                Assert.That(inputData, Is.EquivalentTo(resultData), "plain file is equal to encrypted file");
+
+                #endregion
             }
-
-            var inputData = File.ReadAllBytes(this.InputFile);
-            var outputData = File.ReadAllBytes(this.OutputFile);
-            var resultData = File.ReadAllBytes(this.ResultFile);
-
-            Assert.That(inputData.Length, Is.LessThan(outputData.Length), "Input file is smaller than output file");
-            Assert.That(outputData, Is.Not.EquivalentTo(resultData), "Encrypted file is not equal to plain file");
-            Assert.That(inputData.Length, Is.EqualTo(resultData.Length), "size of plain file is equal to encrypted file");
-            Assert.That(inputData, Is.EquivalentTo(resultData), "plain file is equal to encrypted file");
         }
     }
 }

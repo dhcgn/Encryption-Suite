@@ -359,7 +359,7 @@ namespace EncryptionSuite.Encryption
             [ProtoMember(2)]
             public EcKeyPair EphemeralKey { get; set; }
 
-            public static EllipticCurveEncryptionInformation Create(EcKeyPair[] publicKeys, byte[] secretKey)
+            public static EllipticCurveEncryptionInformation Create(IEnumerable<EcKeyPair> publicKeys, byte[] secretKey)
             {
                 var ephemeralKey = EllipticCurveCryptographer.CreateKeyPair(true);
 

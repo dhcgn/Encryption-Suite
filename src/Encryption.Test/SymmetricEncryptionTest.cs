@@ -13,11 +13,24 @@ namespace EncryptionSuite.Encryption.Test
         [Test]
         public void GetRandomDataTest()
         {
+            #region Arrange
+
             var bits = 128;
+
+            #endregion
+
+            #region Act
+
             var result = RandomHelper.GetRandomData(bits);
+
+            #endregion
+
+            #region Assert
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(bits / 8));
+
+            #endregion
         }
 
         [Test]
@@ -27,12 +40,18 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(EncryptionSecret.Password, false)]
         public void EncryptTest(EncryptionSecret secretType, bool withFilename)
         {
+            #region Arrange
+
             var data = Guid.NewGuid().ToByteArray();
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
             var key = Encryption.Random.CreateData(512 / 8);
+
+            #endregion
+
+            #region Act
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
@@ -55,40 +74,68 @@ namespace EncryptionSuite.Encryption.Test
                         throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
                 }
             }
+
+            #endregion
+
+            #region Assert
+
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
+
+            #endregion
         }
 
         [Test]
         public void Encrypt_Progress_Test()
         {
+            #region Arrange
+
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
 
             var progressValues = new List<double>();
 
             var multiplier = 10;
+
+            #endregion
+
+            #region Act
+
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
             using (var output = File.Create(this.OutputFile))
             {
                 SymmetricEncryption.Encrypt(input, output, pwd, filename, d => { progressValues.Add(d); }, () => false);
             }
+
+            #endregion
+
+            #region Assert
+
             Assert.That(progressValues.Count, Is.EqualTo(multiplier));
             Assert.That(progressValues, Is.Ordered);
             Assert.That(progressValues, Is.Unique);
             Assert.That(progressValues, Has.None.GreaterThan(100));
             Assert.That(progressValues, Has.None.LessThan(0));
+
+            #endregion
         }
 
         [Test]
         public void Decrypt_Progress_Test()
         {
+            #region Arrange
+
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
 
             var progressValues = new List<double>();
 
             var multiplier = 10;
+
+            #endregion
+
+            #region Act
+
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
             using (var output = File.Create(this.OutputFile))
             {
@@ -102,27 +149,46 @@ namespace EncryptionSuite.Encryption.Test
                 info = SymmetricEncryption.Decrypt(input, output, pwd, d => { progressValues.Add(d); }, () => false);
             }
 
+            #endregion
+
+            #region Assert
+
             Assert.That(progressValues.Count, Is.EqualTo(multiplier + 1));
             Assert.That(progressValues, Is.Ordered);
             Assert.That(progressValues, Is.Unique);
             Assert.That(progressValues, Has.None.GreaterThan(100));
             Assert.That(progressValues, Has.None.LessThan(0));
+
+            #endregion
         }
 
         [Test]
         public void Encrypt_Cancel_Test()
         {
+            #region Arrange
+
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
 
             int progressCounter = 0;
+
+            #endregion
+
+            #region Act
 
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * 10]))
             using (var output = File.Create(this.OutputFile))
             {
                 SymmetricEncryption.Encrypt(input, output, pwd, filename, d => progressCounter++, () => true);
             }
+
+            #endregion
+
+            #region Assert
+
             Assert.That(progressCounter, Is.EqualTo(0));
+
+            #endregion
         }
 
         public enum EncryptionSecret
@@ -138,12 +204,18 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(EncryptionSecret.Password, false)]
         public void EncryptAndDecryptTest(EncryptionSecret secretType, bool withFilename)
         {
+            #region Arrange
+
             var data = Guid.NewGuid().ToByteArray();
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
             var key = Encryption.Random.CreateData(512 / 8);
+
+            #endregion
+
+            #region Act
 
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Create(this.OutputFile))
@@ -184,6 +256,10 @@ namespace EncryptionSuite.Encryption.Test
                 }
             }
 
+            #endregion
+
+            #region Assert
+
             if (withFilename)
             {
                 Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
@@ -196,6 +272,8 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
             Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
             Assert.That(data, Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
+
+            #endregion
         }
 
         [Test(Description = "Encrypt and Decrypt to and from MemoryStream")]
@@ -205,12 +283,18 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(EncryptionSecret.Password, false)]
         public void EncryptAndDecrypt_MemoryStream_Test(EncryptionSecret secretType, bool withFilename)
         {
+            #region Arrange
+
             var data = Guid.NewGuid().ToByteArray();
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
             var key = Encryption.Random.CreateData(512 / 8);
+
+            #endregion
+
+            #region Act
 
             var outputEncrypted = new MemoryStream();
             using (var input = new MemoryStream(File.ReadAllBytes(this.InputFile)))
@@ -251,6 +335,10 @@ namespace EncryptionSuite.Encryption.Test
                 }
             }
 
+            #endregion
+
+            #region Assert
+
             if (withFilename)
             {
                 Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
@@ -263,6 +351,8 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(data, Is.Not.EquivalentTo(outputEncrypted.ToArray()));
             Assert.That(data.Length, Is.LessThan(outputEncrypted.ToArray().Length));
             Assert.That(data, Is.EquivalentTo(outputPlain.ToArray()));
+
+            #endregion
         }
 
         public enum TamperEnum
@@ -281,6 +371,8 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase(TamperEnum.Nothing, TestName = "Tamper nothing")]
         public void TamperTest(TamperEnum tamperEnum)
         {
+            #region Arrange
+
             var key = Encryption.Random.CreateData(512 / 8);
 
             using (var input = File.OpenRead(this.InputFile))
@@ -297,6 +389,10 @@ namespace EncryptionSuite.Encryption.Test
                 informationContainer = SymmetricEncryption.SeparateFromInput(output, input);
                 file = output.ToArray();
             }
+
+            #endregion
+
+            #region Act
 
             switch (tamperEnum)
             {
@@ -315,6 +411,10 @@ namespace EncryptionSuite.Encryption.Test
                 case TamperEnum.Nothing:
                     break;
             }
+
+            #endregion
+
+            #region Assert
 
             var memoryStream = new MemoryStream();
             SymmetricEncryption.JoinToOutput(new MemoryStream(file), memoryStream, informationContainer);
@@ -342,6 +442,8 @@ namespace EncryptionSuite.Encryption.Test
             {
                 Assert.That(File.ReadAllBytes(this.InputFile), Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
             }
+
+            #endregion
         }
     }
 }
