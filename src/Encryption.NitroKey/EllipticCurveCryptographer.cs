@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using EncryptionSuite.Contract;
@@ -43,6 +44,21 @@ namespace EncryptionSuite.Encryption.NitroKey
             var attributes = new List<ulong> {(ulong) type};
             var requiredAttributes = session.GetAttributeValue(handle, attributes);
             return requiredAttributes[0].GetValueAsString();
+        }
+
+        public static bool OpenSCIsInstalled()
+        {
+            return File.Exists(LibraryPath);
+        }
+
+        public static bool TokenPresent()
+        {
+            bool result;
+            using (Pkcs11 pk = new Pkcs11(LibraryPath, false))
+            {
+                result = pk.GetSlotList(true).Any(slot1 => slot1.GetSlotInfo().ManufacturerId == "Nitrokey");
+            }
+            return result;
         }
 
         public static EcKeyPairInfo[] GetEcKeyPairInfos()

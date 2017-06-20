@@ -14,6 +14,14 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
         [SetUp]
         public void Setup()
         {
+            var isOpenScInstalled = Encryption.NitroKey.EllipticCurveCryptographer.OpenSCIsInstalled();
+            if (!isOpenScInstalled)
+                Assert.Inconclusive("OpenSC is not installed");
+
+            var tokenPresent = Encryption.NitroKey.EllipticCurveCryptographer.TokenPresent();
+            if (!tokenPresent)
+                Assert.Inconclusive("No NitroKey token present");
+
             this.InputFile = Path.GetTempFileName();
             this.OutputFile = Path.GetTempFileName();
             this.ResultFile = Path.GetTempFileName();
