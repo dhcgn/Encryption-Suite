@@ -48,6 +48,7 @@ namespace EncryptionSuite.Encryption.NitroKey
 
         public static bool OpenSCIsInstalled()
         {
+            // Bug check 33 OR 64 bit lib
             return File.Exists(LibraryPath);
         }
 
@@ -243,10 +244,7 @@ namespace EncryptionSuite.Encryption.NitroKey
                     session.Login(CKU.CKU_USER, password);
 
                     var objectPrivate = GetObjectHandle(name, session, CKO.CKO_PRIVATE_KEY);
-
                     var publicKey = publicKeyPair.ToDre();
-
-                    byte[] data = session.GenerateRandom(32);
                     var mechanism = new Mechanism(CKM.CKM_ECDH1_DERIVE, new CkEcdh1DeriveParams(0, null, publicKey));
 
                     var deriveAttributes = new List<ObjectAttribute>
@@ -267,7 +265,10 @@ namespace EncryptionSuite.Encryption.NitroKey
 
                     var derivedSecret = GetDataFromObject(derivedKey, session, CKA.CKA_VALUE);
 
-                    return SHA512.Create().ComputeHash(derivedSecret);
+                    using (var sha512 = SHA512.Create())
+                    {
+                        return sha512.ComputeHash(derivedSecret);
+                    }
                 }
             }
         }

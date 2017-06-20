@@ -41,9 +41,5 @@ namespace EncryptionSuite.Encryption
             ecDsa.ImportParameters(signedKeyPair.CreateECParameters());
             return ecDsa.VerifyData(data, signature, HashAlgorithmName.SHA512);
         }
-
-       
     }
-
-
 }
