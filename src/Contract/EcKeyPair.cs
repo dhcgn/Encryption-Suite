@@ -37,6 +37,26 @@ namespace EncryptionSuite.Contract
             };
         }
 
+        /// <summary>
+        /// Todo Because earsdropper should get the public key hash only, and receiver only need an inditcator that he could decrypt trhis message.
+        /// </summary>
+        /// <returns></returns>
+        public (byte[] hash, byte[] salt) GetPublicKeySaltedHash()
+        {
+            var salt = new byte[256 / 8];
+            RandomNumberGenerator.Create().GetBytes(salt);
+
+            var hash = SHA256.Create().ComputeHash(this.ToAns1().Concat(salt).ToArray());
+
+            return ValueTuple.Create(hash, salt);
+        }
+
+        public bool CheckPublicKeyHash(byte[] hash, byte[] salt)
+        {
+            var hashCompare = SHA256.Create().ComputeHash(this.ToAns1().Concat(salt).ToArray());
+            return hash.SequenceEqual(hashCompare);
+        }
+
         public static EcKeyPair CreateFromECParameters(ECParameters exportParameters)
         {
             return new EcKeyPair
@@ -90,12 +110,23 @@ namespace EncryptionSuite.Contract
 
         public byte[] ToAns1()
         {
-            return ans1Header.Concat(this.PublicKey.Qx).Concat(this.PublicKey.Qy).ToArray();
+            var uncompressedIndicator = (byte)0x04;
+            var expetedLength = (byte)0x51;
+
+            return new[] {uncompressedIndicator, expetedLength}.Concat(this.ToDre()).ToArray();
         }
 
+        /// <summary>
+        /// Spec: "The uncompressed form is indicated by 0x04"
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// https://tools.ietf.org/html/rfc5480 -> Subject Public Key
+        /// </remarks>
         public byte[] ToDre()
         {
-            return new[] { (byte)0x04 }.Concat(this.PublicKey.Qx).Concat(this.PublicKey.Qy).ToArray();
+            var uncompressedIndicator = (byte)0x04;
+            return new[] { uncompressedIndicator }.Concat(this.PublicKey.Qx).Concat(this.PublicKey.Qy).ToArray();
         }
 
         [JsonIgnore]

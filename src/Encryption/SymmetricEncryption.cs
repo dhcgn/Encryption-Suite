@@ -71,11 +71,16 @@ namespace EncryptionSuite.Encryption
 
         internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
-            var tempFileName = Path.GetTempFileName();
+            var inMemory = output is MemoryStream;
+
+            var tempFileName = inMemory ? null : Path.GetTempFileName();
+            var tempMemoryStream = new MemoryStream();
+
             InformationContainer informationContainer;
-            using (var tempFileStream = File.OpenWrite(tempFileName))
+            using (var tempFileStream = inMemory ? null : File.OpenWrite(tempFileName))
             {
-                informationContainer = SeparateFromInput(tempFileStream, input);
+                Stream stream = inMemory ? (Stream) tempMemoryStream : (Stream) tempFileStream;
+                informationContainer = SeparateFromInput(stream, input);
             }
 
             if (password != null)
@@ -92,9 +97,10 @@ namespace EncryptionSuite.Encryption
                 decryptedSecretInfo = SecretInformation.FromProtoBufData(memoryStream.ToArray());
             }
 
-            using (var tempFileStream = File.OpenRead(tempFileName))
+            using (var tempFileStream = inMemory ? null : File.OpenRead(tempFileName))
             {
-                DecryptRaw(tempFileStream, output, secret, informationContainer.PublicInformation, parameter?.Progress, parameter?.IsCanceled);
+                Stream stream = inMemory ? (Stream) new MemoryStream(tempMemoryStream.ToArray()) : (Stream) tempFileStream;
+                DecryptRaw(stream, output, secret, informationContainer.PublicInformation, parameter?.Progress, parameter?.IsCanceled);
             }
 
             return new DecryptInfo
@@ -114,12 +120,16 @@ namespace EncryptionSuite.Encryption
 
         internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
         {
-            var tempFileName = Path.GetTempFileName();
+            var inMemory = output is MemoryStream;
+
+            var tempFileName = inMemory ? null : Path.GetTempFileName();
+            var tempMemoryStream = new MemoryStream();
 
             PublicInformation publicInformation;
-            using (var tempFileStream = File.OpenWrite(tempFileName))
+            using (Stream tempFileStream = inMemory ? null : File.OpenWrite(tempFileName))
             {
-                publicInformation = EncryptRaw(input, tempFileStream, secretKey, parameter?.Progress, parameter?.IsCanceled);
+                Stream stream = inMemory ? (Stream) tempMemoryStream : (Stream) tempFileStream;
+                publicInformation = EncryptRaw(input, stream, secretKey, parameter?.Progress, parameter?.IsCanceled);
             }
 
             byte[] secretInformationData = null;
@@ -143,7 +153,8 @@ namespace EncryptionSuite.Encryption
                 EllipticCurveEncryptionInformation = parameter?.EllipticCurveEncryptionInformation,
             };
 
-            JoinToOutput(File.OpenRead(tempFileName), output, fileMetaInfo);
+            Stream fileStream = inMemory ? (Stream) new MemoryStream(tempMemoryStream.ToArray()) : (Stream) File.OpenRead(tempFileName);
+            JoinToOutput(fileStream, output, fileMetaInfo);
         }
 
         private static void DecryptRaw(Stream input, Stream output, byte[] secret, PublicInformation publicInformation, Action<double> progress, Func<bool> isCanceled)
@@ -177,7 +188,7 @@ namespace EncryptionSuite.Encryption
                             {
                                 hmacStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double)input.Position / input.Length * 100);
+                                progress?.Invoke((double) input.Position / input.Length * 100);
                             }
 
                             input.CopyTo(hmacStream);
@@ -247,7 +258,6 @@ namespace EncryptionSuite.Encryption
             return output.ToArray();
         }
 
-      
 
         internal static InformationContainer SeparateFromInput(Stream ouput, Stream input)
         {
@@ -327,7 +337,7 @@ namespace EncryptionSuite.Encryption
 #else
                     Iterations = 100_000,
 #endif
-                    Salt = Random.CreateData(128/8),
+                    Salt = Random.CreateData(128 / 8),
                 };
             }
 
@@ -342,17 +352,18 @@ namespace EncryptionSuite.Encryption
         public class DerivedSecret
         {
             [ProtoMember(1)]
-            public EcKeyPair PublicKey { get; set; }
+            public byte[] PublicKeyHash { get; set; }
 
             [ProtoMember(2)]
+            public byte[] PublicKeyHashSalt { get; set; }
+
+            [ProtoMember(3)]
             public byte[] EncryptedSharedSecret { get; set; }
         }
 
         [ProtoContract]
         public class EllipticCurveEncryptionInformation : ProtoBase<EllipticCurveEncryptionInformation>
         {
-            
-
             [ProtoMember(1)]
             public List<DerivedSecret> DerivedSecrets { get; set; }
 
@@ -377,9 +388,12 @@ namespace EncryptionSuite.Encryption
                     var output = new MemoryStream();
                     SymmetricEncryption.Encrypt(input, output, deriveSecret);
 
+                    var saltedHash = publicKey.GetPublicKeySaltedHash();
+
                     var derivedSecret = new DerivedSecret()
                     {
-                        PublicKey = publicKey.ExportPublicKey(),
+                        PublicKeyHash = saltedHash.hash,
+                        PublicKeyHashSalt = saltedHash.salt,
                         EncryptedSharedSecret = output.ToArray()
                     };
                     result.DerivedSecrets.Add(derivedSecret);

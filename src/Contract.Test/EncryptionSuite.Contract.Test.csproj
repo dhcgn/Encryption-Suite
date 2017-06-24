@@ -125,6 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CurveHelperTest.cs" />
+    <Compile Include="EcKeyPairTest.cs" />
     <Compile Include="MessageTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -132,6 +133,10 @@
     <ProjectReference Include="..\Contract\EncryptionSuite.Contract.csproj">
       <Project>{d47d8fd4-3d63-4172-8f12-470650da225e}</Project>
       <Name>EncryptionSuite.Contract</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Encryption\EncryptionSuite.Encryption.csproj">
+      <Project>{A324CCE8-8E12-4CAC-9981-1C0C4A5CE57C}</Project>
+      <Name>EncryptionSuite.Encryption</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

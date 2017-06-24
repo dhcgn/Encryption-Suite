@@ -49,7 +49,7 @@ namespace EncryptionSuite.Encryption.Hybrid
             byte[] DeriveSecretFromHsm(SymmetricEncryption.EllipticCurveEncryptionInformation information)
             {
                 var keys = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
-                var ecIdentifier = keys.FirstOrDefault(info => information.DerivedSecrets.Any(secret => info.PublicKey.ToAns1().SequenceEqual(secret.PublicKey.ToAns1())))?.EcIdentifier;
+                var ecIdentifier = keys.FirstOrDefault(info => information.DerivedSecrets.Any(secret => info.PublicKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt)))?.EcIdentifier;
                 if (ecIdentifier == null)
                     throw new Exception("Couldn't find any key on any token");
 
@@ -69,7 +69,7 @@ namespace EncryptionSuite.Encryption.Hybrid
         private static byte[] GetSecretKey(EcIdentifier ecIdentifier, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo, string password)
         {
             var publicKey = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey(ecIdentifier, password);
-            var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => secret.PublicKey.ToAns1().SequenceEqual(publicKey.ToAns1()));
+            var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => publicKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt));
             var ds = Encryption.NitroKey.EllipticCurveCryptographer.DeriveSecret(ecIdentifier, hybridFileInfo.EphemeralKey, password);
 
             var derivedSecretInputStream = new MemoryStream(derivedSecret.EncryptedSharedSecret);
@@ -83,7 +83,7 @@ namespace EncryptionSuite.Encryption.Hybrid
 
         private static byte[] GetSecretKey(EcKeyPair privateKey, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo)
         {
-            var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => secret.PublicKey.ToAns1().SequenceEqual(privateKey.ToAns1()));
+            var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => privateKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt));
 
             var ds = EllipticCurveCryptographer.DeriveSecret(privateKey, hybridFileInfo.EphemeralKey);
 
