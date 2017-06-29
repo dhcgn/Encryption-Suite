@@ -125,8 +125,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EllipticCurveCryptograperTest.cs" />
+    <Compile Include="EncryptInternalTest.cs" />
+    <Compile Include="EncryptRawTest.cs" />
+    <Compile Include="FileformatHelperTest.cs" />
     <Compile Include="FileOperationTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RandomTest.cs" />
     <Compile Include="SymmetricEncryptionTest.cs" />
     <Compile Include="TestBase.cs" />
   </ItemGroup>

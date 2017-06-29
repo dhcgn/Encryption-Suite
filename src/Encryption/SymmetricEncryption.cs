@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -71,17 +72,7 @@ namespace EncryptionSuite.Encryption
 
         internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
-            var inMemory = output is MemoryStream;
-
-            var tempFileName = inMemory ? null : Path.GetTempFileName();
-            var tempMemoryStream = new MemoryStream();
-
-            InformationContainer informationContainer;
-            using (var tempFileStream = inMemory ? null : File.OpenWrite(tempFileName))
-            {
-                Stream stream = inMemory ? (Stream) tempMemoryStream : (Stream) tempFileStream;
-                informationContainer = SeparateFromInput(stream, input);
-            }
+            InformationContainer informationContainer = SymmetricEncryption.FileformatHelper.ReadMeta(input);
 
             if (password != null)
                 secret = Hasher.CreateAesKeyFromPassword(password, informationContainer.DerivationSettings.Salt, informationContainer.DerivationSettings.Iterations);
@@ -97,11 +88,15 @@ namespace EncryptionSuite.Encryption
                 decryptedSecretInfo = SecretInformation.FromProtoBufData(memoryStream.ToArray());
             }
 
-            using (var tempFileStream = inMemory ? null : File.OpenRead(tempFileName))
-            {
-                Stream stream = inMemory ? (Stream) new MemoryStream(tempMemoryStream.ToArray()) : (Stream) tempFileStream;
-                DecryptRaw(stream, output, secret, informationContainer.PublicInformation, parameter?.Progress, parameter?.IsCanceled);
-            }
+            var iv = FileformatHelper.Read(input, FileformatHelper.Field.InitializationVector);
+            var hmac = FileformatHelper.Read(input, FileformatHelper.Field.Hmac);
+            (byte[] Iv, byte[] HmacExptected) param = ValueTuple.Create(iv, hmac);
+
+            FileformatHelper.SeekToMainData(input);
+
+           // var fs = (output as FileStream).
+
+            DecryptRaw(input, output, secret, param, parameter?.Progress, parameter?.IsCanceled);
 
             return new DecryptInfo
             {
@@ -118,46 +113,136 @@ namespace EncryptionSuite.Encryption
             public Func<bool> IsCanceled { get; set; }
         }
 
-        internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
+        internal class FileformatHelper
         {
-            var inMemory = output is MemoryStream;
-
-            var tempFileName = inMemory ? null : Path.GetTempFileName();
-            var tempMemoryStream = new MemoryStream();
-
-            PublicInformation publicInformation;
-            using (Stream tempFileStream = inMemory ? null : File.OpenWrite(tempFileName))
+            internal enum Field
             {
-                Stream stream = inMemory ? (Stream) tempMemoryStream : (Stream) tempFileStream;
-                publicInformation = EncryptRaw(input, stream, secretKey, parameter?.Progress, parameter?.IsCanceled);
+                FileSignature = 0,
+                Version = 1,
+                Hmac = 2,
+                InitializationVector = 3,
+                MetaLength = 4,
             }
 
-            byte[] secretInformationData = null;
+            internal static Dictionary<Field, (int begin, int length)> Positions = new Dictionary<Field, (int begin, int length)>()
+            {
+                {Field.FileSignature, ValueTuple.Create(0, 8)},
+                {Field.Version, ValueTuple.Create(8, 16 / 8)},
+                {Field.Hmac, ValueTuple.Create(10, 512 / 8)},
+                {Field.InitializationVector, ValueTuple.Create(74, 128 / 8)},
+                {Field.MetaLength, ValueTuple.Create(90, 32 / 8)},
+            };
+
+
+            internal static void Write(Stream output, byte[] data, Field field)
+            {
+                var valueTuple = Positions[field];
+                WriteInternal(output, data, valueTuple);
+            }
+
+            private static void WriteInternal(Stream output, byte[] data, ValueTuple<int, int> valueTuple)
+            {
+                if (data.Length != valueTuple.Item2)
+                    throw new Exception($"File length {valueTuple.Item2} expeted but was {data.Length}.");
+
+                output.Seek(valueTuple.Item1, SeekOrigin.Begin);
+                output.Write(data, 0, valueTuple.Item2);
+            }
+
+            internal static byte[] Read(Stream input, Field field)
+            {
+                var valueTuple = Positions[field];
+                return ReadInternal(input, valueTuple);
+            }
+
+            private static byte[] ReadInternal(Stream input, ValueTuple<int, int> valueTuple)
+            {
+                input.Seek(valueTuple.Item1, SeekOrigin.Begin);
+                byte[] data = new byte[valueTuple.Item2];
+                input.Read(data, 0, valueTuple.Item2);
+                return data;
+            }
+
+            internal static void SeekToMainData(Stream input)
+            {
+                var positonMetaData = Positions.Sum(pair => pair.Value.length);
+                var metaDataLength = Read(input, Field.MetaLength);
+                var length = BitConverter.ToInt32(metaDataLength, 0);
+
+                input.Seek(length + positonMetaData, SeekOrigin.Begin);
+            }
+
+            internal static void Init(Stream output)
+            {
+                new MemoryStream(Constants.MagicNumberSymmetric.ToArray()).CopyTo(output);
+            }
+
+            internal static bool Verify(Stream input)
+            {
+                input.Seek(0, SeekOrigin.Begin);
+
+                byte[] magicData = new byte[Constants.MagicNumberSymmetric.Length];
+                input.Read(magicData, 0, magicData.Length);
+
+                return Constants.MagicNumberSymmetric.SequenceEqual(magicData);
+            }
+
+            public static InformationContainer ReadMeta(Stream input)
+            {
+                var metaDataLength = Read(input, Field.MetaLength);
+                var length = BitConverter.ToInt32(metaDataLength, 0);
+                var positonMetaData = Positions.Sum(pair => pair.Value.length);
+
+                var data = ReadInternal(input, ValueTuple.Create(positonMetaData, length));
+
+                return InformationContainer.FromProtoBufData(data);
+            }
+
+            public static void WriteMeta(Stream output, InformationContainer fileMetaInfo)
+            {
+                var metaData = fileMetaInfo.ToProtoBufData();
+                var metaDataLength = BitConverter.GetBytes(metaData.Length);
+                Write(output, metaDataLength, Field.MetaLength);
+
+                var positonMetaData = Positions.Sum(pair => pair.Value.length);
+
+                WriteInternal(output, metaData, ValueTuple.Create(positonMetaData, metaData.Length));
+            }
+        }
+
+        internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
+        {
+            byte[] secretInformationEncryptedData = null;
             if (parameter?.Filename != null)
             {
                 var secretInformation = new SecretInformation
                 {
                     Filename = parameter.Filename,
                 };
-                var secretInformationPlainData = secretInformation.ToProtoBufData();
-                var encrypted = new MemoryStream();
-                EncryptInternal(new MemoryStream(secretInformationPlainData), encrypted, secretKey);
-                secretInformationData = encrypted.ToArray();
-            }
 
+                secretInformationEncryptedData = secretInformation.ToEncyptedData(secretKey);
+            }
             var fileMetaInfo = new InformationContainer
             {
-                PublicInformation = publicInformation,
                 DerivationSettings = parameter?.PasswordDerivationSettings,
-                SecretInformationData = secretInformationData,
+                SecretInformationData = secretInformationEncryptedData,
                 EllipticCurveEncryptionInformation = parameter?.EllipticCurveEncryptionInformation,
             };
 
-            Stream fileStream = inMemory ? (Stream) new MemoryStream(tempMemoryStream.ToArray()) : (Stream) File.OpenRead(tempFileName);
-            JoinToOutput(fileStream, output, fileMetaInfo);
+            FileformatHelper.Init(output);
+            FileformatHelper.WriteMeta(output, fileMetaInfo);
+            FileformatHelper.SeekToMainData(output);
+
+            var result = EncryptRaw(input, output, secretKey, parameter?.Progress, parameter?.IsCanceled);
+
+            // to InformationContainer
+            FileformatHelper.Write(output, result.iv, FileformatHelper.Field.InitializationVector);
+            FileformatHelper.Write(output, result.hmacHash, FileformatHelper.Field.Hmac);
+
+            output.Dispose();
         }
 
-        private static void DecryptRaw(Stream input, Stream output, byte[] secret, PublicInformation publicInformation, Action<double> progress, Func<bool> isCanceled)
+        internal static void DecryptRaw(Stream input, Stream output, byte[] secret, (byte[] hmacHash, byte[] iv) parameter, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
@@ -166,14 +251,26 @@ namespace EncryptionSuite.Encryption
                 isCanceled = () => false;
 
             var keyAes = secret.Take(AesKeyLength).ToArray();
-            var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
+            var hmacKey = secret.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
 
             byte[] hmacHash;
 
             using (var aes = Aes.Create())
             {
                 aes.Key = keyAes;
-                aes.IV = publicInformation.IV;
+                aes.IV = parameter.iv;
+
+#if DEBUG
+                Console.WriteLine("DecryptRaw");
+
+                Console.WriteLine($"AES Key:  {Convert.ToBase64String(aes.Key)}");
+                Console.WriteLine($"AES IV:   {Convert.ToBase64String(aes.IV)}");
+                Console.WriteLine($"HMAC Key: {Convert.ToBase64String(hmacKey)}");
+
+                Console.WriteLine($"Output Position: {output.Position}");
+                Console.WriteLine($"Input Position:  {input.Position}");
+#endif
+
 
                 using (var encryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 {
@@ -188,7 +285,7 @@ namespace EncryptionSuite.Encryption
                             {
                                 hmacStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double) input.Position / input.Length * 100);
+                                progress?.Invoke((double)input.Position / input.Length * 100);
                             }
 
                             input.CopyTo(hmacStream);
@@ -198,11 +295,11 @@ namespace EncryptionSuite.Encryption
                 }
             }
 
-            if (!publicInformation.HmacHash.SequenceEqual(hmacHash))
+            if (!parameter.hmacHash.SequenceEqual(hmacHash))
                 throw new CryptographicException("HMAC Hash not as expected");
         }
 
-        internal static PublicInformation EncryptRaw(Stream input, Stream output, byte[] secret, Action<double> progress = null, Func<bool> isCanceled = null)
+        internal static (byte[] hmacHash, byte[] iv) EncryptRaw(Stream input, Stream output, byte[] secret, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
@@ -210,16 +307,28 @@ namespace EncryptionSuite.Encryption
             if (isCanceled == null)
                 isCanceled = () => false;
 
-            var result = new PublicInformation();
-
             var keyAes = secret.Take(AesKeyLength).ToArray();
-            var hmacKey = keyAes.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
+            var hmacKey = secret.Skip(AesKeyLength).Take(HmacKeyLength).ToArray();
+
+            byte[] iv = null;
+            byte[] hmacHash = null;
 
             using (var aes = Aes.Create())
             {
                 aes.Key = keyAes;
                 aes.GenerateIV();
-                result.IV = aes.IV;
+                iv = aes.IV;
+
+#if DEBUG
+                Console.WriteLine("EncryptRaw");
+
+                Console.WriteLine($"AES Key:  {Convert.ToBase64String(aes.Key)}");
+                Console.WriteLine($"AES IV:   {Convert.ToBase64String(aes.IV)}");
+                Console.WriteLine($"HMAC Key: {Convert.ToBase64String(hmacKey)}");
+
+                Console.WriteLine($"Output Position: {output.Position}");
+                Console.WriteLine($"Input Position:  {input.Position}");
+#endif
 
                 using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                 {
@@ -234,18 +343,19 @@ namespace EncryptionSuite.Encryption
                             {
                                 aesStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double) input.Position / input.Length * 100);
+                                progress?.Invoke((double)input.Position / input.Length * 100);
                             }
                         }
-                        result.HmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
+                        hmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
                     }
                 }
             }
-            return result;
+            return (hmacHash, iv);
         }
 
         private static byte[] CreateOverallHmacHash(byte[] hmacKey, byte[] hmacsha512Hash, byte[] aesIv)
         {
+            byte[] hash;
             var output = new MemoryStream();
             using (var hmacsha512 = new HMACSHA512(hmacKey))
             {
@@ -254,8 +364,9 @@ namespace EncryptionSuite.Encryption
                     new MemoryStream(hmacsha512Hash).CopyTo(hmacStream);
                     new MemoryStream(aesIv).CopyTo(hmacStream);
                 }
+                hash = hmacsha512.Hash;
             }
-            return output.ToArray();
+            return hash;
         }
 
 
@@ -290,21 +401,18 @@ namespace EncryptionSuite.Encryption
         }
 
 
-        #region Private Types
+#region Private Types
 
         [ProtoContract]
         internal class InformationContainer : ProtoBase<InformationContainer>
         {
             [ProtoMember(1)]
-            public PublicInformation PublicInformation { get; set; }
-
-            [ProtoMember(2)]
             public PasswordDerivationSettings DerivationSettings { get; set; }
 
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public byte[] SecretInformationData { get; set; }
 
-            [ProtoMember(4)]
+            [ProtoMember(3)]
             public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
         }
 
@@ -313,16 +421,15 @@ namespace EncryptionSuite.Encryption
         {
             [ProtoMember(1)]
             public string Filename { get; set; }
-        }
 
-        [ProtoContract]
-        internal class PublicInformation
-        {
-            [ProtoMember(1)]
-            public byte[] IV { get; set; }
+            internal byte[] ToEncyptedData(byte[] secretKey)
+            {
+                var secretInformationPlainData = this.ToProtoBufData();
+                var encrypted = new MemoryStream();
+                EncryptInternal(new MemoryStream(secretInformationPlainData), encrypted, secretKey);
 
-            [ProtoMember(2)]
-            public byte[] HmacHash { get; set; }
+                return encrypted.ToArray();
+            }
         }
 
         [ProtoContract]
@@ -414,6 +521,6 @@ namespace EncryptionSuite.Encryption
             public string FileName { get; set; }
         }
 
-        #endregion
+#endregion
     }
 }
