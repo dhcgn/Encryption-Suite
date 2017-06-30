@@ -29,7 +29,7 @@ namespace EncryptionSuite.Encryption.Test
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {
-                SymmetricEncryption.DecryptInternal(input, output, secret, null, new SymmetricEncryption.DecryptInternalParameter());
+                SymmetricEncryption.DecryptInternal(input, output, secret, null, new DecryptInternalParameter());
             }
 
             #endregion
@@ -68,7 +68,7 @@ namespace EncryptionSuite.Encryption.Test
             using (var input = new MemoryStream(encryptedData))
             using (decrypted = new MemoryStream())
             {
-                SymmetricEncryption.DecryptInternal(input, decrypted, secret, null, new SymmetricEncryption.DecryptInternalParameter());
+                SymmetricEncryption.DecryptInternal(input, decrypted, secret, null, new DecryptInternalParameter());
             }
 
             #endregion
@@ -94,7 +94,7 @@ namespace EncryptionSuite.Encryption.Test
             using (var input = File.OpenRead(this.InputFile))
             using (var output = File.Open(this.OutputFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
-                SymmetricEncryption.EncryptInternal(input, output, secret, new SymmetricEncryption.EncryptInternalParameter()
+                SymmetricEncryption.EncryptInternal(input, output, secret, new EncryptInternalParameter()
                 {
                     Filename = Guid.NewGuid().ToString()
                 });
@@ -105,7 +105,7 @@ namespace EncryptionSuite.Encryption.Test
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {
-                SymmetricEncryption.DecryptInternal(input, output, secret, null, new SymmetricEncryption.DecryptInternalParameter());
+                SymmetricEncryption.DecryptInternal(input, output, secret, null, new DecryptInternalParameter());
             }
 
             #endregion
@@ -140,8 +140,8 @@ namespace EncryptionSuite.Encryption.Test
             byte[] hmac;
             using (var input = File.OpenRead(this.OutputFile))
             {
-                iv = SymmetricEncryption.FileformatHelper.Read(input, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
-                hmac = SymmetricEncryption.FileformatHelper.Read(input, SymmetricEncryption.FileformatHelper.Field.Hmac);
+                iv = RawFileAccessor.Read(input, RawFileAccessor.Field.InitializationVector);
+                hmac = RawFileAccessor.Read(input, RawFileAccessor.Field.Hmac);
             }
 
             #endregion
@@ -185,8 +185,8 @@ namespace EncryptionSuite.Encryption.Test
             byte[] hmac;
             using (var input = new MemoryStream(encryptedData))
             {
-                iv = SymmetricEncryption.FileformatHelper.Read(input, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
-                hmac = SymmetricEncryption.FileformatHelper.Read(input, SymmetricEncryption.FileformatHelper.Field.Hmac);
+                iv = RawFileAccessor.Read(input, RawFileAccessor.Field.InitializationVector);
+                hmac = RawFileAccessor.Read(input, RawFileAccessor.Field.Hmac);
             }
 
             #endregion

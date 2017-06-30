@@ -117,7 +117,7 @@ namespace EncryptionSuite.Encryption.Test
                 encryptedData = output.ToArray();
             }
 
-            SymmetricEncryption.DecryptInfo info;
+            DecryptInfo info;
             using (var input = new MemoryStream(encryptedData))
             using (var output = new MemoryStream())
             {
@@ -214,14 +214,14 @@ namespace EncryptionSuite.Encryption.Test
             byte[] dataContent;
             using (var stream = File.OpenRead(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.SeekToMainData(stream);
+                RawFileAccessor.SeekToMainData(stream);
                 var ms = new MemoryStream();
                 stream.CopyTo(ms);
                 dataContent = ms.ToArray();
             }
             Console.Out.WriteLine("Encrypted Content: " + Convert.ToBase64String(dataContent));
 
-            SymmetricEncryption.DecryptInfo info;
+            DecryptInfo info;
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {
@@ -303,7 +303,7 @@ namespace EncryptionSuite.Encryption.Test
             }
 
             var outputPlain = new MemoryStream();
-            SymmetricEncryption.DecryptInfo info;
+            DecryptInfo info;
             using (var input = new MemoryStream(outputEncrypted.ToArray()))
             {
                 switch (secretType)

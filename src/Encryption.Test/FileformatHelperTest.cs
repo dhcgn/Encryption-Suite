@@ -18,7 +18,7 @@ namespace EncryptionSuite.Encryption.Test
         {
             using (var stream = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.Init(stream);
+                RawFileAccessor.Init(stream);
             }
         }
 
@@ -27,13 +27,13 @@ namespace EncryptionSuite.Encryption.Test
         {
             using (var stream = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.Init(stream);
+                RawFileAccessor.Init(stream);
             }
 
             bool verify;
             using (var stream = File.OpenRead(this.OutputFile))
             {
-                verify = SymmetricEncryption.FileformatHelper.Verify(stream);
+                verify = RawFileAccessor.Verify(stream);
             }
             Assert.That(verify);
         }
@@ -44,11 +44,11 @@ namespace EncryptionSuite.Encryption.Test
             long position = 0;
             using (var stream = File.OpenRead(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.SeekToMainData(stream);
+                RawFileAccessor.SeekToMainData(stream);
                 position = stream.Position;
             }
 
-            var sum = SymmetricEncryption.FileformatHelper.Positions.Sum(pair => pair.Value.length);
+            var sum = RawFileAccessor.Positions.Sum(pair => pair.Value.length);
             Assert.That(position, Is.EqualTo(sum));
         }
 
@@ -57,28 +57,28 @@ namespace EncryptionSuite.Encryption.Test
         {
             using (var stream = File.OpenWrite(this.OutputFile))
             {
-                foreach (var value in SymmetricEncryption.FileformatHelper.Positions.Keys)
+                foreach (var value in RawFileAccessor.Positions.Keys)
                 {
-                    var inputData = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[value].length);
-                    SymmetricEncryption.FileformatHelper.Write(stream, inputData, value);
+                    var inputData = Random.CreateData(RawFileAccessor.Positions[value].length);
+                    RawFileAccessor.Write(stream, inputData, value);
                 }
             }
-            var fileMetaInfo = new SymmetricEncryption.InformationContainer
+            var fileMetaInfo = new FileCargo
             {
-                DerivationSettings = SymmetricEncryption.PasswordDerivationSettings.Create(),
+                DerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
                 SecretInformationData = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, fileMetaInfo);
             }
 
             int metaPosition = 0;
             using (var output = File.OpenRead(this.OutputFile))
             {
-                var data = SymmetricEncryption.FileformatHelper.Read(output, SymmetricEncryption.FileformatHelper.Field.MetaLength);
+                var data = RawFileAccessor.Read(output, RawFileAccessor.Field.MetaLength);
                 metaPosition = BitConverter.ToInt32(data, 0);
             }
 
@@ -86,11 +86,11 @@ namespace EncryptionSuite.Encryption.Test
             long position = 0;
             using (var stream = File.OpenRead(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.SeekToMainData(stream);
+                RawFileAccessor.SeekToMainData(stream);
                 position = stream.Position;
             }
 
-            var sum = SymmetricEncryption.FileformatHelper.Positions.Sum(pair => pair.Value.length);
+            var sum = RawFileAccessor.Positions.Sum(pair => pair.Value.length);
             Assert.That(position, Is.EqualTo(sum + metaPosition));
         }
 
@@ -101,13 +101,13 @@ namespace EncryptionSuite.Encryption.Test
 
             var testData = new
             {
-                Iv = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[SymmetricEncryption.FileformatHelper.Field.InitializationVector].length),
-                Hmac = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[SymmetricEncryption.FileformatHelper.Field.Hmac].length),
-                Version = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[SymmetricEncryption.FileformatHelper.Field.Version].length),
+                Iv = Random.CreateData(RawFileAccessor.Positions[RawFileAccessor.Field.InitializationVector].length),
+                Hmac = Random.CreateData(RawFileAccessor.Positions[RawFileAccessor.Field.Hmac].length),
+                Version = Random.CreateData(RawFileAccessor.Positions[RawFileAccessor.Field.Version].length),
                 Data = Random.CreateData(1024),
-                InformationContainer = new SymmetricEncryption.InformationContainer
+                InformationContainer = new FileCargo
                 {
-                    DerivationSettings = SymmetricEncryption.PasswordDerivationSettings.Create(),
+                    DerivationSettings = PasswordDerivationSettings.Create(),
                     EllipticCurveEncryptionInformation = null,
                     SecretInformationData = Random.CreateData(8)
                 }
@@ -115,12 +115,12 @@ namespace EncryptionSuite.Encryption.Test
 
             using (var stream = File.Open(this.OutputFile, FileMode.OpenOrCreate))
             {
-                SymmetricEncryption.FileformatHelper.Init(stream);
-                SymmetricEncryption.FileformatHelper.WriteMeta(stream, testData.InformationContainer);
-                SymmetricEncryption.FileformatHelper.SeekToMainData(stream);
+                RawFileAccessor.Init(stream);
+                RawFileAccessor.WriteMeta(stream, testData.InformationContainer);
+                RawFileAccessor.SeekToMainData(stream);
                 new MemoryStream(testData.Data).CopyTo(stream);
-                SymmetricEncryption.FileformatHelper.Write(stream, testData.Iv, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
-                SymmetricEncryption.FileformatHelper.Write(stream, testData.Hmac, SymmetricEncryption.FileformatHelper.Field.Hmac);
+                RawFileAccessor.Write(stream, testData.Iv, RawFileAccessor.Field.InitializationVector);
+                RawFileAccessor.Write(stream, testData.Hmac, RawFileAccessor.Field.Hmac);
             }
 
             #endregion
@@ -130,13 +130,13 @@ namespace EncryptionSuite.Encryption.Test
             byte[] iv;
             byte[] hmac;
             byte[] data;
-            SymmetricEncryption.InformationContainer informationContainer;
+            FileCargo fileCargo;
             using (var stream = File.Open(this.OutputFile, FileMode.OpenOrCreate))
             {
-                informationContainer = SymmetricEncryption.FileformatHelper.ReadMeta(stream);
-                iv = SymmetricEncryption.FileformatHelper.Read(stream, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
-                hmac = SymmetricEncryption.FileformatHelper.Read(stream, SymmetricEncryption.FileformatHelper.Field.Hmac);
-                SymmetricEncryption.FileformatHelper.SeekToMainData(stream);
+                fileCargo = RawFileAccessor.ReadMeta(stream);
+                iv = RawFileAccessor.Read(stream, RawFileAccessor.Field.InitializationVector);
+                hmac = RawFileAccessor.Read(stream, RawFileAccessor.Field.Hmac);
+                RawFileAccessor.SeekToMainData(stream);
                 var ms = new MemoryStream();
                 stream.CopyTo(ms);
                 ;
@@ -151,7 +151,7 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(hmac, Is.EquivalentTo(testData.Hmac));
             Assert.That(data, Is.EquivalentTo(testData.Data));
 
-            Assert.That(JsonConvert.SerializeObject(informationContainer), Is.EquivalentTo(JsonConvert.SerializeObject(testData.InformationContainer)));
+            Assert.That(JsonConvert.SerializeObject(fileCargo), Is.EquivalentTo(JsonConvert.SerializeObject(testData.InformationContainer)));
 
             #endregion
         }
@@ -161,16 +161,16 @@ namespace EncryptionSuite.Encryption.Test
         {
             EllipticCurveCryptographer.CreateKeyPair(false);
 
-            var fileMetaInfo = new SymmetricEncryption.InformationContainer
+            var fileMetaInfo = new FileCargo
             {
-                DerivationSettings = SymmetricEncryption.PasswordDerivationSettings.Create(),
+                DerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
                 SecretInformationData = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, fileMetaInfo);
             }
         }
 
@@ -180,22 +180,22 @@ namespace EncryptionSuite.Encryption.Test
         {
             EllipticCurveCryptographer.CreateKeyPair(false);
 
-            var fileMetaInfo = new SymmetricEncryption.InformationContainer
+            var fileMetaInfo = new FileCargo
             {
-                DerivationSettings = SymmetricEncryption.PasswordDerivationSettings.Create(),
+                DerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
                 SecretInformationData = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, fileMetaInfo);
             }
 
-            SymmetricEncryption.InformationContainer result;
+           FileCargo result;
             using (var output = File.OpenRead(this.OutputFile))
             {
-                result = SymmetricEncryption.FileformatHelper.ReadMeta(output);
+                result = RawFileAccessor.ReadMeta(output);
             }
 
             Assert.That(JsonConvert.SerializeObject(fileMetaInfo), Is.EqualTo(JsonConvert.SerializeObject(result)));
@@ -214,12 +214,12 @@ namespace EncryptionSuite.Encryption.Test
                 newStream = new MemoryStream(encrypted.ToArray());
             }
 
-            Assert.That(SymmetricEncryption.FileformatHelper.Verify(newStream), "verify file signature");
+            Assert.That(RawFileAccessor.Verify(newStream), "verify file signature");
 
-            var iv = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
+            var iv = RawFileAccessor.Read(newStream, RawFileAccessor.Field.InitializationVector);
             Assert.That(iv, Has.Some.Not.EqualTo(0), "InitializationVector");
 
-            var hmac = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.Hmac);
+            var hmac = RawFileAccessor.Read(newStream, RawFileAccessor.Field.Hmac);
             Assert.That(hmac, Has.Some.Not.EqualTo(0), "Hmac");
         }
 
@@ -236,12 +236,12 @@ namespace EncryptionSuite.Encryption.Test
 
             var newStream = File.OpenRead(this.OutputFile);
 
-            Assert.That(SymmetricEncryption.FileformatHelper.Verify(newStream));
+            Assert.That(RawFileAccessor.Verify(newStream));
 
-            var iv = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
+            var iv = RawFileAccessor.Read(newStream, RawFileAccessor.Field.InitializationVector);
             Assert.That(iv, Has.All.Not.EqualTo(0), "InitializationVector");
 
-            var hmac = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.Hmac);
+            var hmac = RawFileAccessor.Read(newStream, RawFileAccessor.Field.Hmac);
             Assert.That(hmac, Has.Some.Not.EqualTo(0), "Hmac");
         }
 
@@ -253,12 +253,12 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase("InitializationVector")]
         public void Write(string name)
         {
-            var field = (SymmetricEncryption.FileformatHelper.Field) Enum.Parse(typeof(SymmetricEncryption.FileformatHelper.Field), name);
+            var field = (RawFileAccessor.Field) Enum.Parse(typeof(RawFileAccessor.Field), name);
 
-            var inputData = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[field].length);
+            var inputData = Random.CreateData(RawFileAccessor.Positions[field].length);
             using (var stream = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.Write(stream, inputData, field);
+                RawFileAccessor.Write(stream, inputData, field);
             }
 
             Assert.Pass();
@@ -273,19 +273,19 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase("InitializationVector")]
         public void Read_FileStream(string name)
         {
-            var field = (SymmetricEncryption.FileformatHelper.Field) Enum.Parse(typeof(SymmetricEncryption.FileformatHelper.Field), name);
+            var field = (RawFileAccessor.Field) Enum.Parse(typeof(RawFileAccessor.Field), name);
 
-            var inputData = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[field].length);
+            var inputData = Random.CreateData(RawFileAccessor.Positions[field].length);
             using (var stream = File.OpenWrite(this.OutputFile))
             {
-                SymmetricEncryption.FileformatHelper.Write(stream, inputData, field);
+                RawFileAccessor.Write(stream, inputData, field);
             }
 
 
             byte[] readData;
             using (var stream = File.OpenRead(this.OutputFile))
             {
-                readData = SymmetricEncryption.FileformatHelper.Read(stream, field);
+                readData = RawFileAccessor.Read(stream, field);
             }
 
             Assert.That(inputData, Is.EquivalentTo(readData));
@@ -299,20 +299,20 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase("InitializationVector")]
         public void Read_MemoryStream(string name)
         {
-            var field = (SymmetricEncryption.FileformatHelper.Field) Enum.Parse(typeof(SymmetricEncryption.FileformatHelper.Field), name);
+            var field = (RawFileAccessor.Field) Enum.Parse(typeof(RawFileAccessor.Field), name);
 
-            var inputData = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[field].length);
+            var inputData = Random.CreateData(RawFileAccessor.Positions[field].length);
             MemoryStream inputStream;
             using (inputStream = new MemoryStream())
             {
-                SymmetricEncryption.FileformatHelper.Write(inputStream, inputData, field);
+                RawFileAccessor.Write(inputStream, inputData, field);
             }
 
 
             byte[] readData;
             using (var stream = new MemoryStream(inputStream.ToArray()))
             {
-                readData = SymmetricEncryption.FileformatHelper.Read(stream, field);
+                readData = RawFileAccessor.Read(stream, field);
             }
 
             Assert.That(inputData, Is.EquivalentTo(readData));

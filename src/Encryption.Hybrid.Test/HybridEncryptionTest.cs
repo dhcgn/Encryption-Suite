@@ -196,7 +196,7 @@ namespace EncryptionSuite.Encryption.Hybrid.Test
                 HybridEncryption.Encrypt(input, output, encryptionParameter);
             }
 
-            SymmetricEncryption.DecryptInfo info;
+            DecryptInfo info;
             using (var input = File.OpenRead(this.OutputFile))
             using (var output = File.Create(this.ResultFile))
             {

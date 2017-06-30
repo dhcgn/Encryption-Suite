@@ -17,7 +17,7 @@ namespace EncryptionSuite.Encryption.Test
         {
             #region Arrange
 
-            var si = new SymmetricEncryption.SecretInformation()
+            var si = new SecretInformation()
             {
                 Filename = Guid.NewGuid().ToString()
             };
@@ -45,7 +45,7 @@ namespace EncryptionSuite.Encryption.Test
         {
             #region Arrange
 
-            var si = new SymmetricEncryption.SecretInformation()
+            var si = new SecretInformation()
             {
                 Filename = Guid.NewGuid().ToString()
             };
@@ -59,7 +59,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var encyptedData = si.ToEncyptedData(secret);
             SymmetricEncryption.DecryptInternal(new MemoryStream(encyptedData), result, secret, null, null);
-            var secretInformation = SymmetricEncryption.SecretInformation.FromProtoBufData(result.ToArray());
+            var secretInformation = SecretInformation.FromProtoBufData(result.ToArray());
 
             #endregion
 

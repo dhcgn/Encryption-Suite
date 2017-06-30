@@ -30,9 +30,9 @@ namespace EncryptionSuite.Encryption.Hybrid
         {
             var secretKey = Random.CreateData(SymmetricEncryption.AesKeyLength + SymmetricEncryption.HmacKeyLength);
 
-            var hybridFileInfo = SymmetricEncryption.EllipticCurveEncryptionInformation.Create(parameter.PublicKeys, secretKey);
+            var hybridFileInfo = EllipticCurveEncryptionInformation.Create(parameter.PublicKeys, secretKey);
 
-            var internalParameter = new SymmetricEncryption.EncryptInternalParameter
+            var internalParameter = new EncryptInternalParameter
             {
                 Filename = parameter.Filename,
                 PasswordDerivationSettings = null,
@@ -44,9 +44,9 @@ namespace EncryptionSuite.Encryption.Hybrid
             SymmetricEncryption.EncryptInternal(input, output, secretKey, internalParameter);
         }
 
-        public static SymmetricEncryption.DecryptInfo Decrypt(Stream input, Stream output, DecryptionParameter parameter)
+        public static DecryptInfo Decrypt(Stream input, Stream output, DecryptionParameter parameter)
         {
-            byte[] DeriveSecretFromHsm(SymmetricEncryption.EllipticCurveEncryptionInformation information)
+            byte[] DeriveSecretFromHsm(EllipticCurveEncryptionInformation information)
             {
                 var keys = Encryption.NitroKey.EllipticCurveCryptographer.GetEcKeyPairInfos();
                 var ecIdentifier = keys.FirstOrDefault(info => information.DerivedSecrets.Any(secret => info.PublicKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt)))?.EcIdentifier;
@@ -56,7 +56,7 @@ namespace EncryptionSuite.Encryption.Hybrid
                 return GetSecretKey(ecIdentifier, information, parameter.Password);
             }
 
-            var internalParameter = new SymmetricEncryption.DecryptInternalParameter
+            var internalParameter = new DecryptInternalParameter
             {
                 EllipticCurveDeriveKeyAction = information => parameter.PrivateKey == null ? DeriveSecretFromHsm(information) : GetSecretKey(parameter.PrivateKey, information),
                 Progress = parameter.Progress,
@@ -66,7 +66,7 @@ namespace EncryptionSuite.Encryption.Hybrid
             return SymmetricEncryption.DecryptInternal(input, output, null, null, internalParameter);
         }
 
-        private static byte[] GetSecretKey(EcIdentifier ecIdentifier, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo, string password)
+        private static byte[] GetSecretKey(EcIdentifier ecIdentifier, EllipticCurveEncryptionInformation hybridFileInfo, string password)
         {
             var publicKey = Encryption.NitroKey.EllipticCurveCryptographer.GetPublicKey(ecIdentifier, password);
             var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => publicKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt));
@@ -81,7 +81,7 @@ namespace EncryptionSuite.Encryption.Hybrid
             return secretKey;
         }
 
-        private static byte[] GetSecretKey(EcKeyPair privateKey, SymmetricEncryption.EllipticCurveEncryptionInformation hybridFileInfo)
+        private static byte[] GetSecretKey(EcKeyPair privateKey, EllipticCurveEncryptionInformation hybridFileInfo)
         {
             var derivedSecret = hybridFileInfo.DerivedSecrets.FirstOrDefault(secret => privateKey.CheckPublicKeyHash(secret.PublicKeyHash, secret.PublicKeyHashSalt));
 

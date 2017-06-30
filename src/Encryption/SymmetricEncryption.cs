@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using EncryptionSuite.Contract;
-using ProtoBuf;
 
 namespace EncryptionSuite.Encryption
 {
@@ -114,143 +111,36 @@ namespace EncryptionSuite.Encryption
 
         internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
-            if(!FileformatHelper.Verify(input))
+            if(!RawFileAccessor.Verify(input))
                 throw new CryptographicException("File signature is wrong");
 
-            InformationContainer informationContainer = SymmetricEncryption.FileformatHelper.ReadMeta(input);
+            var fileCargo = RawFileAccessor.ReadMeta(input);
 
             if (password != null)
-                secret = Hasher.CreateAesKeyFromPassword(password, informationContainer.DerivationSettings.Salt, informationContainer.DerivationSettings.Iterations);
+                secret = Hasher.CreateAesKeyFromPassword(password, fileCargo.DerivationSettings.Salt, fileCargo.DerivationSettings.Iterations);
 
             if (parameter?.EllipticCurveDeriveKeyAction != null)
-                secret = parameter?.EllipticCurveDeriveKeyAction(informationContainer.EllipticCurveEncryptionInformation);
+                secret = parameter?.EllipticCurveDeriveKeyAction(fileCargo.EllipticCurveEncryptionInformation);
 
             SecretInformation decryptedSecretInfo = null;
-            if (informationContainer.SecretInformationData != null)
+            if (fileCargo.SecretInformationData != null)
             {
                 var memoryStream = new MemoryStream();
-                DecryptInternal(new MemoryStream(informationContainer.SecretInformationData), memoryStream, secret, null, null);
+                DecryptInternal(new MemoryStream(fileCargo.SecretInformationData), memoryStream, secret, null, null);
                 decryptedSecretInfo = SecretInformation.FromProtoBufData(memoryStream.ToArray());
             }
 
-            var iv = FileformatHelper.Read(input, FileformatHelper.Field.InitializationVector);
-            var hmac = FileformatHelper.Read(input, FileformatHelper.Field.Hmac);
+            var iv = RawFileAccessor.Read(input, RawFileAccessor.Field.InitializationVector);
+            var hmac = RawFileAccessor.Read(input, RawFileAccessor.Field.Hmac);
             (byte[] hmac, byte[] iv) param = (hmac, iv);
 
-            FileformatHelper.SeekToMainData(input);
+            RawFileAccessor.SeekToMainData(input);
             DecryptRaw(input, output, secret, param, parameter?.Progress, parameter?.IsCanceled);
 
             return new DecryptInfo
             {
                 FileName = decryptedSecretInfo?.Filename,
             };
-        }
-
-        internal class EncryptInternalParameter
-        {
-            public PasswordDerivationSettings PasswordDerivationSettings { get; set; }
-            public string Filename { get; set; }
-            public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
-            public Action<double> Progress { get; set; }
-            public Func<bool> IsCanceled { get; set; }
-        }
-
-        internal class FileformatHelper
-        {
-            internal enum Field
-            {
-                FileSignature = 0,
-                Version = 1,
-                Hmac = 2,
-                InitializationVector = 3,
-                MetaLength = 4,
-            }
-
-            internal static Dictionary<Field, (int begin, int length)> Positions = new Dictionary<Field, (int begin, int length)>()
-            {
-                {Field.FileSignature, (0, 8)},
-                {Field.Version, (8, 16 / 8)},
-                {Field.Hmac, (10, 512 / 8)},
-                {Field.InitializationVector,(74, 128 / 8)},
-                {Field.MetaLength, (90, 32 / 8)},
-            };
-
-
-            internal static void Write(Stream output, byte[] data, Field field)
-            {
-                var valueTuple = Positions[field];
-                WriteInternal(output, data, valueTuple);
-            }
-
-            private static void WriteInternal(Stream output, byte[] data, ValueTuple<int, int> valueTuple)
-            {
-                if (data.Length != valueTuple.Item2)
-                    throw new Exception($"File length {valueTuple.Item2} expeted but was {data.Length}.");
-
-                output.Seek(valueTuple.Item1, SeekOrigin.Begin);
-                output.Write(data, 0, valueTuple.Item2);
-            }
-
-            internal static byte[] Read(Stream input, Field field)
-            {
-                var valueTuple = Positions[field];
-                return ReadInternal(input, valueTuple);
-            }
-
-            private static byte[] ReadInternal(Stream input, ValueTuple<int, int> valueTuple)
-            {
-                input.Seek(valueTuple.Item1, SeekOrigin.Begin);
-                byte[] data = new byte[valueTuple.Item2];
-                input.Read(data, 0, valueTuple.Item2);
-                return data;
-            }
-
-            internal static void SeekToMainData(Stream input)
-            {
-                var positonMetaData = Positions.Sum(pair => pair.Value.length);
-                var metaDataLength = Read(input, Field.MetaLength);
-                var length = BitConverter.ToInt32(metaDataLength, 0);
-
-                input.Seek(length + positonMetaData, SeekOrigin.Begin);
-            }
-
-            internal static void Init(Stream output)
-            {
-                output.Seek(Positions[Field.FileSignature].begin, SeekOrigin.Begin);
-                new MemoryStream(Constants.MagicNumberSymmetric.ToArray()).CopyTo(output);
-            }
-
-            internal static bool Verify(Stream input)
-            {
-                input.Seek(0, SeekOrigin.Begin);
-
-                byte[] magicData = new byte[Constants.MagicNumberSymmetric.Length];
-                input.Read(magicData, 0, magicData.Length);
-
-                return Constants.MagicNumberSymmetric.SequenceEqual(magicData);
-            }
-
-            public static InformationContainer ReadMeta(Stream input)
-            {
-                var metaDataLength = Read(input, Field.MetaLength);
-                var length = BitConverter.ToInt32(metaDataLength, 0);
-                var positonMetaData = Positions.Sum(pair => pair.Value.length);
-
-                var data = ReadInternal(input, (positonMetaData, length));
-
-                return InformationContainer.FromProtoBufData(data);
-            }
-
-            public static void WriteMeta(Stream output, InformationContainer fileMetaInfo)
-            {
-                var metaData = fileMetaInfo.ToProtoBufData();
-                var metaDataLength = BitConverter.GetBytes(metaData.Length);
-                Write(output, metaDataLength, Field.MetaLength);
-
-                var positonMetaData = Positions.Sum(pair => pair.Value.length);
-
-                WriteInternal(output, metaData, (positonMetaData, metaData.Length));
-            }
         }
 
         internal static void EncryptInternal(Stream input, Stream output, byte[] secretKey, EncryptInternalParameter parameter = null)
@@ -265,21 +155,21 @@ namespace EncryptionSuite.Encryption
 
                 secretInformationEncryptedData = secretInformation.ToEncyptedData(secretKey);
             }
-            var fileMetaInfo = new InformationContainer
+            var fileMetaInfo = new FileCargo
             {
                 DerivationSettings = parameter?.PasswordDerivationSettings,
                 SecretInformationData = secretInformationEncryptedData,
                 EllipticCurveEncryptionInformation = parameter?.EllipticCurveEncryptionInformation,
             };
 
-            FileformatHelper.Init(output);
-            FileformatHelper.WriteMeta(output, fileMetaInfo);
-            FileformatHelper.SeekToMainData(output);
+            RawFileAccessor.Init(output);
+            RawFileAccessor.WriteMeta(output, fileMetaInfo);
+            RawFileAccessor.SeekToMainData(output);
 
             var result = EncryptRaw(input, output, secretKey, parameter?.Progress, parameter?.IsCanceled);
 
-            FileformatHelper.Write(output, result.iv, FileformatHelper.Field.InitializationVector);
-            FileformatHelper.Write(output, result.hmacHash, FileformatHelper.Field.Hmac);
+            RawFileAccessor.Write(output, result.iv, RawFileAccessor.Field.InitializationVector);
+            RawFileAccessor.Write(output, result.hmacHash, RawFileAccessor.Field.Hmac);
 
             output.Dispose();
         }
@@ -428,131 +318,5 @@ namespace EncryptionSuite.Encryption
             return hash;
         }
 
-
-        #region Private Types
-
-        [ProtoContract]
-        internal class InformationContainer : ProtoBase<InformationContainer>
-        {
-            [ProtoMember(1)]
-            public PasswordDerivationSettings DerivationSettings { get; set; }
-
-            [ProtoMember(2)]
-            public byte[] SecretInformationData { get; set; }
-
-            [ProtoMember(3)]
-            public EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation { get; set; }
-        }
-
-        [ProtoContract]
-        internal class SecretInformation : ProtoBase<SecretInformation>
-        {
-            [ProtoMember(1)]
-            public string Filename { get; set; }
-
-            internal byte[] ToEncyptedData(byte[] secret)
-            {
-                var secretInformationPlainData = this.ToProtoBufData();
-                var encrypted = new MemoryStream();
-                var input = new MemoryStream();
-
-                new MemoryStream(secretInformationPlainData).CopyTo(input);
-                input.Seek(0, SeekOrigin.Begin);
-                EncryptInternal(input, encrypted, secret);
-
-                return encrypted.ToArray();
-            }
-        }
-
-        [ProtoContract]
-        internal class PasswordDerivationSettings
-        {
-            public static PasswordDerivationSettings Create()
-            {
-                return new PasswordDerivationSettings
-                {
-#if DEBUG
-                    Iterations = 100,
-#else
-                    Iterations = 100_000,
-#endif
-                    Salt = Random.CreateData(128 / 8),
-                };
-            }
-
-            [ProtoMember(1)]
-            public byte[] Salt { get; internal set; }
-
-            [ProtoMember(2)]
-            public int Iterations { get; internal set; }
-        }
-
-        [ProtoContract]
-        public class DerivedSecret
-        {
-            [ProtoMember(1)]
-            public byte[] PublicKeyHash { get; set; }
-
-            [ProtoMember(2)]
-            public byte[] PublicKeyHashSalt { get; set; }
-
-            [ProtoMember(3)]
-            public byte[] EncryptedSharedSecret { get; set; }
-        }
-
-        [ProtoContract]
-        public class EllipticCurveEncryptionInformation : ProtoBase<EllipticCurveEncryptionInformation>
-        {
-            [ProtoMember(1)]
-            public List<DerivedSecret> DerivedSecrets { get; set; }
-
-            [ProtoMember(2)]
-            public EcKeyPair EphemeralKey { get; set; }
-
-            public static EllipticCurveEncryptionInformation Create(IEnumerable<EcKeyPair> publicKeys, byte[] secretKey)
-            {
-                var ephemeralKey = EllipticCurveCryptographer.CreateKeyPair(true);
-
-                var result = new EllipticCurveEncryptionInformation()
-                {
-                    EphemeralKey = ephemeralKey.ExportPublicKey(),
-                };
-
-                result.DerivedSecrets = new List<DerivedSecret>();
-                foreach (var publicKey in publicKeys)
-                {
-                    var deriveSecret = EllipticCurveCryptographer.DeriveSecret(ephemeralKey, publicKey);
-
-                    var input = new MemoryStream(secretKey);
-                    var output = new MemoryStream();
-                    SymmetricEncryption.Encrypt(input, output, deriveSecret);
-
-                    var saltedHash = publicKey.GetPublicKeySaltedHash();
-
-                    var derivedSecret = new DerivedSecret()
-                    {
-                        PublicKeyHash = saltedHash.hash,
-                        PublicKeyHashSalt = saltedHash.salt,
-                        EncryptedSharedSecret = output.ToArray()
-                    };
-                    result.DerivedSecrets.Add(derivedSecret);
-                }
-                return result;
-            }
-        }
-
-        internal class DecryptInternalParameter
-        {
-            public Func<EllipticCurveEncryptionInformation, byte[]> EllipticCurveDeriveKeyAction { get; set; }
-            public Action<double> Progress { get; set; }
-            public Func<bool> IsCanceled { get; set; }
-        }
-
-        public class DecryptInfo
-        {
-            public string FileName { get; set; }
-        }
-
-        #endregion
     }
 }

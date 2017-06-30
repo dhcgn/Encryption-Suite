@@ -45,10 +45,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PlainTypes\EncryptInternalParameter.cs" />
+    <Compile Include="PlainTypes\DecryptInfo.cs" />
+    <Compile Include="PlainTypes\DecryptInternalParameter.cs" />
+    <Compile Include="PlainTypes\DerivedSecret.cs" />
+    <Compile Include="PlainTypes\EllipticCurveEncryptionInformation.cs" />
+    <Compile Include="PlainTypes\FileCargo.cs" />
     <Compile Include="FileOperation.cs" />
     <Compile Include="Hash.cs" />
     <Compile Include="EllipticCurveCryptographer.cs" />
+    <Compile Include="PlainTypes\PasswordDerivationSettings.cs" />
     <Compile Include="Random.cs" />
+    <Compile Include="Internal\RawFileAccessor.cs" />
+    <Compile Include="PlainTypes\SecretInformation.cs" />
     <Compile Include="SymmetricEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
