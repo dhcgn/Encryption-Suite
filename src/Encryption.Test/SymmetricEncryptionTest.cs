@@ -23,7 +23,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512 / 8);
+            var key = Random.CreateData(512 / 8);
 
             #endregion
 
@@ -172,21 +172,145 @@ namespace EncryptionSuite.Encryption.Test
             Key
         }
 
+        [Test]
+        public void EncryptAndDecrypt_UseFromStreamTest()
+        {
+            #region Arrange
+
+            var data = Random.CreateData(128 / 8);
+            File.WriteAllBytes(this.InputFile, data);
+
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+            var key = Random.CreateData(512 / 8);
+
+            #endregion
+
+            #region Act
+
+            Exception ex;
+            using (var input = File.OpenRead(this.InputFile))
+            using (var output = File.OpenWrite(this.OutputFile))
+            {
+                ex = Assert.Throws<Exception>(() =>  SymmetricEncryption.Encrypt(input, output, key, filename));
+            }
+
+            #endregion
+
+            #region Assert
+
+            Assert.That(ex.Message, Is.EqualTo("Strean must support read and write operations"));
+
+            #endregion
+        }
+
         [Test(Description = "Encrypt and Decrypt to and from FileStream")]
         [TestCase(EncryptionSecret.Key, true)]
         [TestCase(EncryptionSecret.Password, true)]
         [TestCase(EncryptionSecret.Key, false)]
         [TestCase(EncryptionSecret.Password, false)]
-        public void EncryptAndDecryptTest(EncryptionSecret secretType, bool withFilename)
+        public void EncryptAndDecrypt_FileStream_Test(EncryptionSecret secretType, bool withFilename)
         {
             #region Arrange
 
-            var data = Encryption.Random.CreateData(128 / 8);
+            var data = Random.CreateData(128 / 8);
             File.WriteAllBytes(this.InputFile, data);
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512 / 8);
+            var key = Random.CreateData(512 / 8);
+
+            #endregion
+
+            #region Act
+
+            using (var input = File.OpenRead(this.InputFile))
+            using (var output = File.Open(this.OutputFile, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                switch (secretType)
+                {
+                    case EncryptionSecret.Password:
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, output, pwd, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, pwd);
+                        break;
+                    case EncryptionSecret.Key:
+                        if (withFilename)
+                            SymmetricEncryption.Encrypt(input, output, key, filename);
+                        else
+                            SymmetricEncryption.Encrypt(input, output, key);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
+                }
+            }
+
+
+            byte[] dataContent;
+            using (var stream = File.OpenRead(this.OutputFile))
+            {
+                RawFileAccessor.SeekToMainData(stream);
+                var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                dataContent = ms.ToArray();
+            }
+            Console.Out.WriteLine("Encrypted Content: " + Convert.ToBase64String(dataContent));
+
+            DecryptInfo info;
+            using (var input = File.OpenRead(this.OutputFile))
+            using (var output = File.Create(this.ResultFile))
+            {
+                switch (secretType)
+                {
+                    case EncryptionSecret.Password:
+                        info = SymmetricEncryption.Decrypt(input, output, pwd);
+                        break;
+                    case EncryptionSecret.Key:
+                        info = SymmetricEncryption.Decrypt(input, output, key);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
+                }
+            }
+
+            #endregion
+
+            #region Assert
+
+            if (withFilename)
+            {
+                Assert.That(info?.FileName, Is.EqualTo(filename), "Filename is correct decrypted.");
+            }
+            else
+            {
+                Assert.That(info.FileName, Is.Null, "Filename is Null.");
+            }
+
+            Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));
+            Assert.That(data.Length, Is.LessThan(File.ReadAllBytes(this.OutputFile).Length));
+            Assert.That(FileOperation.HasFileSignature(this.OutputFile), "HasFileSignature");
+
+            Assert.That(File.ReadAllBytes(this.ResultFile), Is.EquivalentTo(data), "Plaindata is equal after decryption");
+
+            #endregion
+        }
+
+        [Test(Description = "Encrypt and Decrypt to and from FileStream")]
+        [TestCase(EncryptionSecret.Key, true)]
+        [TestCase(EncryptionSecret.Password, true)]
+        [TestCase(EncryptionSecret.Key, false)]
+        [TestCase(EncryptionSecret.Password, false)]
+        public void EncryptAndDecrypt_Filepath_Test(EncryptionSecret secretType, bool withFilename)
+        {
+            #region Arrange
+
+            var data = Random.CreateData(128 / 8);
+            File.WriteAllBytes(this.InputFile, data);
+
+            var pwd = Guid.NewGuid().ToString();
+            var filename = Guid.NewGuid().ToString();
+            var key = Random.CreateData(512 / 8);
 
             #endregion
 
@@ -274,7 +398,7 @@ namespace EncryptionSuite.Encryption.Test
 
             var pwd = Guid.NewGuid().ToString();
             var filename = Guid.NewGuid().ToString();
-            var key = Encryption.Random.CreateData(512 / 8);
+            var key = Random.CreateData(512 / 8);
 
             #endregion
 
@@ -347,6 +471,5 @@ namespace EncryptionSuite.Encryption.Test
             File,
             Nothing
         }
-
     }
 }

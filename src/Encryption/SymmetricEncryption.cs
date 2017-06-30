@@ -55,7 +55,7 @@ namespace EncryptionSuite.Encryption
         }
 
 
-        public static void Encrypt(MemoryStream input, MemoryStream output, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        public static void Encrypt(Stream input, Stream output, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var derivationSettings = PasswordDerivationSettings.Create();
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
@@ -70,10 +70,13 @@ namespace EncryptionSuite.Encryption
             EncryptInternal(input, output, secretKey, parameter);
         }
 
-        public static void Encrypt(MemoryStream input, MemoryStream output, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            if (!(output.CanRead && output.CanWrite))
+                throw new Exception("Strean must support read and write operations");
 
             var parameter = new EncryptInternalParameter
             {
