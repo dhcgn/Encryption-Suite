@@ -29,26 +29,22 @@ namespace EncryptionSuite.Encryption.Test
 
             #region Act
 
-            using (var input = File.OpenRead(this.InputFile))
-            using (var output = File.Create(this.OutputFile))
+            switch (secretType)
             {
-                switch (secretType)
-                {
-                    case EncryptionSecret.Password:
-                        if (withFilename)
-                            SymmetricEncryption.Encrypt(input, output, pwd, filename);
-                        else
-                            SymmetricEncryption.Encrypt(input, output, pwd);
-                        break;
-                    case EncryptionSecret.Key:
-                        if (withFilename)
-                            SymmetricEncryption.Encrypt(input, output, key, filename);
-                        else
-                            SymmetricEncryption.Encrypt(input, output, key);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
-                }
+                case EncryptionSecret.Password:
+                    if (withFilename)
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, pwd, filename);
+                    else
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, pwd);
+                    break;
+                case EncryptionSecret.Key:
+                    if (withFilename)
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, key, filename);
+                    else
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, key);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
             }
 
             #endregion
@@ -79,7 +75,7 @@ namespace EncryptionSuite.Encryption.Test
             #region Act
 
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
-            using (var output = File.Create(this.OutputFile))
+            using (var output = new MemoryStream())
             {
                 SymmetricEncryption.Encrypt(input, output, pwd, filename, d => { progressValues.Add(d); }, () => false);
             }
@@ -98,7 +94,7 @@ namespace EncryptionSuite.Encryption.Test
         }
 
         [Test]
-        public void Decrypt_Progress_Test()
+        public void Decrypt_MemoryStream_Progress_Test()
         {
             #region Arrange
 
@@ -113,15 +109,17 @@ namespace EncryptionSuite.Encryption.Test
 
             #region Act
 
+            byte[] encryptedData;
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * multiplier]))
-            using (var output = File.Create(this.OutputFile))
+            using (var output = new MemoryStream())
             {
                 SymmetricEncryption.Encrypt(input, output, pwd, filename);
+                encryptedData = output.ToArray();
             }
 
             SymmetricEncryption.DecryptInfo info;
-            using (var input = File.OpenRead(this.OutputFile))
-            using (var output = File.Create(this.ResultFile))
+            using (var input = new MemoryStream(encryptedData))
+            using (var output = new MemoryStream())
             {
                 info = SymmetricEncryption.Decrypt(input, output, pwd, d => { progressValues.Add(d); }, () => false);
             }
@@ -154,7 +152,7 @@ namespace EncryptionSuite.Encryption.Test
             #region Act
 
             using (var input = new MemoryStream(new byte[SymmetricEncryption.BufferSize * 10]))
-            using (var output = File.Create(this.OutputFile))
+            using (var output = new MemoryStream())
             {
                 SymmetricEncryption.Encrypt(input, output, pwd, filename, d => progressCounter++, () => true);
             }
@@ -194,27 +192,24 @@ namespace EncryptionSuite.Encryption.Test
 
             #region Act
 
-            using (var input = File.OpenRead(this.InputFile))
-            using (var output = File.Create(this.OutputFile))
+            switch (secretType)
             {
-                switch (secretType)
-                {
-                    case EncryptionSecret.Password:
-                        if (withFilename)
-                            SymmetricEncryption.Encrypt(input, output, pwd, filename);
-                        else
-                            SymmetricEncryption.Encrypt(input, output, pwd);
-                        break;
-                    case EncryptionSecret.Key:
-                        if (withFilename)
-                            SymmetricEncryption.Encrypt(input, output, key, filename);
-                        else
-                            SymmetricEncryption.Encrypt(input, output, key);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
-                }
+                case EncryptionSecret.Password:
+                    if (withFilename)
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, pwd, filename);
+                    else
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, pwd);
+                    break;
+                case EncryptionSecret.Key:
+                    if (withFilename)
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, key, filename);
+                    else
+                        SymmetricEncryption.Encrypt(this.InputFile, this.OutputFile, key);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(secretType), secretType, null);
             }
+
 
             byte[] dataContent;
             using (var stream = File.OpenRead(this.OutputFile))
@@ -353,88 +348,5 @@ namespace EncryptionSuite.Encryption.Test
             Nothing
         }
 
-        [TestCase(TamperEnum.AesKey, TestName = "Tamper AES Key")]
-        [TestCase(TamperEnum.HmacHash, TestName = "Tamper HMAC hash")]
-        [TestCase(TamperEnum.Iv, TestName = "Tamper IV")]
-        [TestCase(TamperEnum.File, TestName = "Tamper encrypted file")]
-        [TestCase(TamperEnum.Nothing, TestName = "Tamper nothing")]
-        public void TamperTest(TamperEnum tamperEnum)
-        {
-            #region Arrange
-
-            var secret = Encryption.Random.CreateData(512 / 8);
-
-            using (var input = File.OpenRead(this.InputFile))
-            using (var output = File.Create(this.OutputFile))
-            {
-                SymmetricEncryption.EncryptInternal(input, output, secret);
-            }
-
-            SymmetricEncryption.InformationContainer informationContainer;
-            byte[] file = null;
-            using (var input = File.OpenRead(this.OutputFile))
-            {
-                var output = new MemoryStream();
-                informationContainer = SymmetricEncryption.SeparateFromInput(output, input);
-                file = output.ToArray();
-            }
-
-            #endregion
-
-            #region Act
-
-            switch (tamperEnum)
-            {
-                case TamperEnum.AesKey:
-                    secret[0] ^= secret[0];
-                    break;
-                case TamperEnum.HmacHash:
-                    Assert.Fail();
-                    //informationContainer.PublicInformation.HmacHash[0] ^= informationContainer.PublicInformation.HmacHash[0];
-                    break;
-                case TamperEnum.Iv:
-                    Assert.Fail();
-                    // informationContainer.PublicInformation.IV[0] ^= informationContainer.PublicInformation.IV[0];
-                    break;
-                case TamperEnum.File:
-                    file[0] ^= file[0];
-                    break;
-                case TamperEnum.Nothing:
-                    break;
-            }
-
-            #endregion
-
-            #region Assert
-
-            var memoryStream = new MemoryStream();
-            SymmetricEncryption.JoinToOutput(new MemoryStream(file), memoryStream, informationContainer);
-            var tampertFile = memoryStream.ToArray();
-
-            using (var input = new MemoryStream(tampertFile))
-            using (var output = File.Create(this.ResultFile))
-            {
-                switch (tamperEnum)
-                {
-                    case TamperEnum.AesKey:
-                    case TamperEnum.HmacHash:
-                    case TamperEnum.Iv:
-                    case TamperEnum.File:
-                        var ex = Assert.Throws<CryptographicException>(() => SymmetricEncryption.DecryptInternal(input, output, secret, null, null));
-                        Console.Out.WriteLine($"Exception: {ex.GetType().Name}, Message: {ex.Message}");
-                        break;
-                    case TamperEnum.Nothing:
-                        Assert.DoesNotThrow(() => SymmetricEncryption.DecryptInternal(input, output, secret, null, null));
-                        break;
-                }
-            }
-
-            if (tamperEnum == TamperEnum.Nothing)
-            {
-                Assert.That(File.ReadAllBytes(this.InputFile), Is.EquivalentTo(File.ReadAllBytes(this.ResultFile)));
-            }
-
-            #endregion
-        }
     }
 }

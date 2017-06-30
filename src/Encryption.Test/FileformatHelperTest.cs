@@ -202,6 +202,50 @@ namespace EncryptionSuite.Encryption.Test
         }
 
         [Test]
+        public void EncryptInternal_MemoryStream()
+        {
+            var data = Guid.NewGuid().ToByteArray();
+            var secret = Random.CreateData(512 / 8);
+
+            MemoryStream newStream;
+            using (var encrypted = new MemoryStream())
+            {
+                SymmetricEncryption.EncryptInternal(new MemoryStream(data), encrypted, secret);
+                newStream = new MemoryStream(encrypted.ToArray());
+            }
+
+            Assert.That(SymmetricEncryption.FileformatHelper.Verify(newStream), "verify file signature");
+
+            var iv = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
+            Assert.That(iv, Has.Some.Not.EqualTo(0), "InitializationVector");
+
+            var hmac = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.Hmac);
+            Assert.That(hmac, Has.Some.Not.EqualTo(0), "Hmac");
+        }
+
+        [Test]
+        public void EncryptInternal_FileStream()
+        {
+            var data = Guid.NewGuid().ToByteArray();
+            var secret = Random.CreateData(512 / 8);
+
+            using (var output = File.Open(this.OutputFile,FileMode.Open,FileAccess.ReadWrite,FileShare.ReadWrite))
+            {
+                SymmetricEncryption.EncryptInternal(new MemoryStream(data), output, secret);
+            }
+
+            var newStream = File.OpenRead(this.OutputFile);
+
+            Assert.That(SymmetricEncryption.FileformatHelper.Verify(newStream));
+
+            var iv = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.InitializationVector);
+            Assert.That(iv, Has.All.Not.EqualTo(0), "InitializationVector");
+
+            var hmac = SymmetricEncryption.FileformatHelper.Read(newStream, SymmetricEncryption.FileformatHelper.Field.Hmac);
+            Assert.That(hmac, Has.Some.Not.EqualTo(0), "Hmac");
+        }
+
+        [Test]
         [TestCase("Hmac")]
         [TestCase("FileSignature")]
         [TestCase("Version")]
@@ -227,7 +271,7 @@ namespace EncryptionSuite.Encryption.Test
         [TestCase("Version")]
         [TestCase("MetaLength")]
         [TestCase("InitializationVector")]
-        public void Read(string name)
+        public void Read_FileStream(string name)
         {
             var field = (SymmetricEncryption.FileformatHelper.Field) Enum.Parse(typeof(SymmetricEncryption.FileformatHelper.Field), name);
 
@@ -240,6 +284,33 @@ namespace EncryptionSuite.Encryption.Test
 
             byte[] readData;
             using (var stream = File.OpenRead(this.OutputFile))
+            {
+                readData = SymmetricEncryption.FileformatHelper.Read(stream, field);
+            }
+
+            Assert.That(inputData, Is.EquivalentTo(readData));
+        }
+
+        [Test]
+        [TestCase("Hmac")]
+        [TestCase("FileSignature")]
+        [TestCase("Version")]
+        [TestCase("MetaLength")]
+        [TestCase("InitializationVector")]
+        public void Read_MemoryStream(string name)
+        {
+            var field = (SymmetricEncryption.FileformatHelper.Field) Enum.Parse(typeof(SymmetricEncryption.FileformatHelper.Field), name);
+
+            var inputData = Random.CreateData(SymmetricEncryption.FileformatHelper.Positions[field].length);
+            MemoryStream inputStream;
+            using (inputStream = new MemoryStream())
+            {
+                SymmetricEncryption.FileformatHelper.Write(inputStream, inputData, field);
+            }
+
+
+            byte[] readData;
+            using (var stream = new MemoryStream(inputStream.ToArray()))
             {
                 readData = SymmetricEncryption.FileformatHelper.Read(stream, field);
             }

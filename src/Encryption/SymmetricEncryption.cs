@@ -37,7 +37,28 @@ namespace EncryptionSuite.Encryption
             return DecryptInternal(input, output, null, password, decryptInternalParameter);
         }
 
-        public static void Encrypt(Stream input, Stream output, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        public static void Encrypt(string inputPath, string outputPath, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        {
+            var derivationSettings = PasswordDerivationSettings.Create();
+            var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
+            var parameter = new EncryptInternalParameter
+            {
+                Filename = filename,
+                PasswordDerivationSettings = derivationSettings,
+                EllipticCurveEncryptionInformation = null,
+                Progress = progress,
+                IsCanceled = isCanceled,
+            };
+
+            using (var input = File.OpenRead(inputPath))
+            using (var output = File.Open(outputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                EncryptInternal(input, output, secretKey, parameter);
+            }
+        }
+
+
+        public static void Encrypt(MemoryStream input, MemoryStream output, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var derivationSettings = PasswordDerivationSettings.Create();
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
@@ -52,7 +73,7 @@ namespace EncryptionSuite.Encryption
             EncryptInternal(input, output, secretKey, parameter);
         }
 
-        public static void Encrypt(Stream input, Stream output, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        public static void Encrypt(MemoryStream input, MemoryStream output, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
@@ -68,10 +89,34 @@ namespace EncryptionSuite.Encryption
             EncryptInternal(input, output, secret, parameter);
         }
 
+        public static void Encrypt(string inputPath, string outputPath, byte[] secret, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
+        {
+            if (secret.Length < AesKeyLength + HmacKeyLength)
+                throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            var parameter = new EncryptInternalParameter
+            {
+                Filename = filename,
+                PasswordDerivationSettings = null,
+                EllipticCurveEncryptionInformation = null,
+                Progress = progress,
+                IsCanceled = isCanceled,
+            };
+
+            using (var input = File.OpenRead(inputPath))
+            using (var output = File.Open(outputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                EncryptInternal(input, output, secret, parameter);
+            }
+        }
+
         #endregion
 
         internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
+            if(!FileformatHelper.Verify(input))
+                throw new CryptographicException("File signature is wrong");
+
             InformationContainer informationContainer = SymmetricEncryption.FileformatHelper.ReadMeta(input);
 
             if (password != null)
@@ -90,12 +135,9 @@ namespace EncryptionSuite.Encryption
 
             var iv = FileformatHelper.Read(input, FileformatHelper.Field.InitializationVector);
             var hmac = FileformatHelper.Read(input, FileformatHelper.Field.Hmac);
-            (byte[] Iv, byte[] HmacExptected) param = ValueTuple.Create(iv, hmac);
+            (byte[] hmac, byte[] iv) param = (hmac, iv);
 
             FileformatHelper.SeekToMainData(input);
-
-           // var fs = (output as FileStream).
-
             DecryptRaw(input, output, secret, param, parameter?.Progress, parameter?.IsCanceled);
 
             return new DecryptInfo
@@ -126,11 +168,11 @@ namespace EncryptionSuite.Encryption
 
             internal static Dictionary<Field, (int begin, int length)> Positions = new Dictionary<Field, (int begin, int length)>()
             {
-                {Field.FileSignature, ValueTuple.Create(0, 8)},
-                {Field.Version, ValueTuple.Create(8, 16 / 8)},
-                {Field.Hmac, ValueTuple.Create(10, 512 / 8)},
-                {Field.InitializationVector, ValueTuple.Create(74, 128 / 8)},
-                {Field.MetaLength, ValueTuple.Create(90, 32 / 8)},
+                {Field.FileSignature, (0, 8)},
+                {Field.Version, (8, 16 / 8)},
+                {Field.Hmac, (10, 512 / 8)},
+                {Field.InitializationVector,(74, 128 / 8)},
+                {Field.MetaLength, (90, 32 / 8)},
             };
 
 
@@ -174,6 +216,7 @@ namespace EncryptionSuite.Encryption
 
             internal static void Init(Stream output)
             {
+                output.Seek(Positions[Field.FileSignature].begin, SeekOrigin.Begin);
                 new MemoryStream(Constants.MagicNumberSymmetric.ToArray()).CopyTo(output);
             }
 
@@ -193,7 +236,7 @@ namespace EncryptionSuite.Encryption
                 var length = BitConverter.ToInt32(metaDataLength, 0);
                 var positonMetaData = Positions.Sum(pair => pair.Value.length);
 
-                var data = ReadInternal(input, ValueTuple.Create(positonMetaData, length));
+                var data = ReadInternal(input, (positonMetaData, length));
 
                 return InformationContainer.FromProtoBufData(data);
             }
@@ -206,7 +249,7 @@ namespace EncryptionSuite.Encryption
 
                 var positonMetaData = Positions.Sum(pair => pair.Value.length);
 
-                WriteInternal(output, metaData, ValueTuple.Create(positonMetaData, metaData.Length));
+                WriteInternal(output, metaData, (positonMetaData, metaData.Length));
             }
         }
 
@@ -235,7 +278,6 @@ namespace EncryptionSuite.Encryption
 
             var result = EncryptRaw(input, output, secretKey, parameter?.Progress, parameter?.IsCanceled);
 
-            // to InformationContainer
             FileformatHelper.Write(output, result.iv, FileformatHelper.Field.InitializationVector);
             FileformatHelper.Write(output, result.hmacHash, FileformatHelper.Field.Hmac);
 
@@ -246,6 +288,12 @@ namespace EncryptionSuite.Encryption
         {
             if (secret.Length < AesKeyLength + HmacKeyLength)
                 throw new Exception($"length of secret must be {AesKeyLength + HmacKeyLength} or more.");
+
+            if (parameter.iv.Length != 128 / 8)
+                throw new Exception($"length of IV must be {128 / 8} but was {parameter.iv.Length}.");
+
+            if (parameter.hmacHash.Length != 512 / 8)
+                throw new Exception($"length of HMAC must be {512 / 8} but was {parameter.hmacHash.Length}.");
 
             if (isCanceled == null)
                 isCanceled = () => false;
@@ -285,7 +333,7 @@ namespace EncryptionSuite.Encryption
                             {
                                 hmacStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double)input.Position / input.Length * 100);
+                                progress?.Invoke((double) input.Position / input.Length * 100);
                             }
 
                             input.CopyTo(hmacStream);
@@ -296,7 +344,8 @@ namespace EncryptionSuite.Encryption
             }
 
             if (!parameter.hmacHash.SequenceEqual(hmacHash))
-                throw new CryptographicException("HMAC Hash not as expected");
+                throw new CryptographicException("HMAC Hash not as expected", 
+                    $"{Convert.ToBase64String(parameter.hmacHash)} not equal to {Convert.ToBase64String(hmacHash)}");
         }
 
         internal static (byte[] hmacHash, byte[] iv) EncryptRaw(Stream input, Stream output, byte[] secret, Action<double> progress = null, Func<bool> isCanceled = null)
@@ -334,8 +383,8 @@ namespace EncryptionSuite.Encryption
                 {
                     using (var hmacsha512 = new HMACSHA512(hmacKey))
                     {
-                        using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
-                        using (var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write))
+                        var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write);
+                        var aesStream = new CryptoStream(hmacStream, encryptor, CryptoStreamMode.Write);
                         {
                             byte[] buffer = new byte[BufferSize];
                             int read;
@@ -343,9 +392,10 @@ namespace EncryptionSuite.Encryption
                             {
                                 aesStream.Write(buffer, 0, read);
 
-                                progress?.Invoke((double)input.Position / input.Length * 100);
+                                progress?.Invoke((double) input.Position / input.Length * 100);
                             }
                         }
+                        aesStream.FlushFinalBlock();
                         hmacHash = CreateOverallHmacHash(hmacKey, hmacsha512.Hash, aes.IV);
                     }
                 }
@@ -353,7 +403,7 @@ namespace EncryptionSuite.Encryption
             return (hmacHash, iv);
         }
 
-        private static byte[] CreateOverallHmacHash(byte[] hmacKey, byte[] hmacsha512Hash, byte[] aesIv)
+        private static byte[] CreateOverallHmacHash(byte[] hmacKey, byte[] hmacsha512Hash, byte[] iv)
         {
             byte[] hash;
             var output = new MemoryStream();
@@ -362,46 +412,24 @@ namespace EncryptionSuite.Encryption
                 using (var hmacStream = new CryptoStream(output, hmacsha512, CryptoStreamMode.Write))
                 {
                     new MemoryStream(hmacsha512Hash).CopyTo(hmacStream);
-                    new MemoryStream(aesIv).CopyTo(hmacStream);
+                    new MemoryStream(iv).CopyTo(hmacStream);
                 }
                 hash = hmacsha512.Hash;
             }
+
+#if DEBUG
+            Console.Out.WriteLine($"CreateOverallHmacHash:\r\n" +
+                                  $"Input Key:   {Convert.ToBase64String(hmacKey)}\r\n" +
+                                  $"Input Hash:  {Convert.ToBase64String(hmacsha512Hash)}\r\n" +
+                                  $"Input IV:    {Convert.ToBase64String(iv)}\r\n\r\n" +
+                                  $"Result Hash: {Convert.ToBase64String(hash)}\r\n");
+#endif
+
             return hash;
         }
 
 
-        internal static InformationContainer SeparateFromInput(Stream ouput, Stream input)
-        {
-            byte[] magicData = new byte[Constants.MagicNumberSymmetric.Length];
-            input.Read(magicData, 0, magicData.Length);
-
-            if (!magicData.SequenceEqual(Constants.MagicNumberSymmetric))
-                throw new Exception("File header does not match");
-
-            byte[] intData = new byte[4];
-            input.Read(intData, 0, intData.Length);
-            int intValue = BitConverter.ToInt32(intData, 0);
-
-            var protoDate = new byte[intValue];
-            input.Read(protoDate, 0, intValue);
-
-            input.CopyTo(ouput);
-
-            return InformationContainer.FromProtoBufData(protoDate);
-        }
-
-        internal static void JoinToOutput(Stream input, Stream output, InformationContainer informationContainer)
-        {
-            var cryptoFileInfoDate = informationContainer.ToProtoBufData();
-
-            new MemoryStream(Constants.MagicNumberSymmetric.ToArray()).CopyTo(output);
-            new MemoryStream(BitConverter.GetBytes(cryptoFileInfoDate.Length)).CopyTo(output);
-            new MemoryStream(cryptoFileInfoDate).CopyTo(output);
-            input.CopyTo(output);
-        }
-
-
-#region Private Types
+        #region Private Types
 
         [ProtoContract]
         internal class InformationContainer : ProtoBase<InformationContainer>
@@ -422,11 +450,15 @@ namespace EncryptionSuite.Encryption
             [ProtoMember(1)]
             public string Filename { get; set; }
 
-            internal byte[] ToEncyptedData(byte[] secretKey)
+            internal byte[] ToEncyptedData(byte[] secret)
             {
                 var secretInformationPlainData = this.ToProtoBufData();
                 var encrypted = new MemoryStream();
-                EncryptInternal(new MemoryStream(secretInformationPlainData), encrypted, secretKey);
+                var input = new MemoryStream();
+
+                new MemoryStream(secretInformationPlainData).CopyTo(input);
+                input.Seek(0, SeekOrigin.Begin);
+                EncryptInternal(input, encrypted, secret);
 
                 return encrypted.ToArray();
             }
@@ -521,6 +553,6 @@ namespace EncryptionSuite.Encryption
             public string FileName { get; set; }
         }
 
-#endregion
+        #endregion
     }
 }
