@@ -1,5 +1,5 @@
 
-$Version = "1.0.0.6"
+$Version = "1.0.0.7"
 $NewVersion = 'AssemblyVersion("' + $Version + '")';
 $NewFileVersion = 'AssemblyFileVersion("' + $Version + '")';
 
