@@ -8,17 +8,17 @@ namespace EncryptionSuite.Encryption
     [ProtoContract]
     public class EllipticCurveEncryptionInformation : ProtoBase<EllipticCurveEncryptionInformation>
     {
-        [ProtoMember(1)]
+        [ProtoMember(1, IsRequired = true)]
         public List<DerivedSecret> DerivedSecrets { get; set; }
 
-        [ProtoMember(2)]
+        [ProtoMember(2, IsRequired = true)]
         public EcKeyPair EphemeralKey { get; set; }
 
         public static EllipticCurveEncryptionInformation Create(IEnumerable<EcKeyPair> publicKeys, byte[] secretKey)
         {
             var ephemeralKey = EllipticCurveCryptographer.CreateKeyPair(true);
 
-            var result = new EllipticCurveEncryptionInformation()
+            var result = new EllipticCurveEncryptionInformation
             {
                 EphemeralKey = ephemeralKey.ExportPublicKey(),
             };
@@ -34,7 +34,7 @@ namespace EncryptionSuite.Encryption
 
                 var saltedHash = publicKey.GetPublicKeySaltedHash();
 
-                var derivedSecret = new DerivedSecret()
+                var derivedSecret = new DerivedSecret
                 {
                     PublicKeyHash = saltedHash.hash,
                     PublicKeyHashSalt = saltedHash.salt,

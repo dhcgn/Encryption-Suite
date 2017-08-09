@@ -11,13 +11,11 @@ namespace EncryptionSuite.Contract
     public partial class EcKeyPair : ProtoBase<EcKeyPair>
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        [ProtoMember(1)]
+        [ProtoMember(1, IsRequired = false)]
         public byte[] PrivateKey { get; set; }
 
-        [ProtoMember(2)]
+        [ProtoMember(2, IsRequired = true)]
         public PublicKey PublicKey { get; set; }
-
-        public int Version { get; set; }
     }
 
     /// <summary>

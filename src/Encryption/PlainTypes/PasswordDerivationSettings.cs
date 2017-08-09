@@ -18,10 +18,10 @@ namespace EncryptionSuite.Encryption
             };
         }
 
-        [ProtoMember(1)]
+        [ProtoMember(1, IsRequired = true)]
         public byte[] Salt { get; internal set; }
 
-        [ProtoMember(2)]
+        [ProtoMember(2, IsRequired = true)]
         public int Iterations { get; internal set; }
     }
 }

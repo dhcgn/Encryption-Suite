@@ -239,7 +239,7 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(RawFileAccessor.Verify(newStream));
 
             var iv = RawFileAccessor.Read(newStream, RawFileAccessor.Field.InitializationVector);
-            Assert.That(iv, Has.All.Not.EqualTo(0), "InitializationVector");
+            Assert.That(iv, Has.Some.Not.EqualTo(0), "InitializationVector");
 
             var hmac = RawFileAccessor.Read(newStream, RawFileAccessor.Field.Hmac);
             Assert.That(hmac, Has.Some.Not.EqualTo(0), "Hmac");

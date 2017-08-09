@@ -7,7 +7,7 @@ namespace EncryptionSuite.Encryption
     [ProtoContract]
     internal class SecretInformation : ProtoBase<SecretInformation>
     {
-        [ProtoMember(1)]
+        [ProtoMember(1, IsRequired = false)]
         public string Filename { get; set; }
 
         internal byte[] ToEncyptedData(byte[] secret)
