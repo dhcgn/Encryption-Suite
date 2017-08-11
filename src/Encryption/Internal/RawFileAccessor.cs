@@ -81,7 +81,7 @@ namespace EncryptionSuite.Encryption
             return Constants.MagicNumberSymmetric.SequenceEqual(magicData);
         }
 
-        public static FileCargo ReadMeta(Stream input)
+        public static MetaInformation ReadMeta(Stream input)
         {
             var metaDataLength = Read(input, Field.MetaLength);
             var length = BitConverter.ToInt32(metaDataLength, 0);
@@ -89,12 +89,12 @@ namespace EncryptionSuite.Encryption
 
             var data = ReadInternal(input, (positonMetaData, length));
 
-            return FileCargo.FromProtoBufData(data);
+            return MetaInformation.FromProtoBufData(data);
         }
 
-        public static void WriteMeta(Stream output, FileCargo fileMetaInfo)
+        public static void WriteMeta(Stream output, MetaInformation metaInformation)
         {
-            var metaData = fileMetaInfo.ToProtoBufData();
+            var metaData = metaInformation.ToProtoBufData();
             var metaDataLength = BitConverter.GetBytes(metaData.Length);
             Write(output, metaDataLength, Field.MetaLength);
 

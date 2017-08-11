@@ -36,7 +36,7 @@ namespace EncryptionSuite.Contract
         }
 
         /// <summary>
-        /// Todo Because earsdropper should get the public key hash only, and receiver only need an inditcator that he could decrypt trhis message.
+        /// Todo Because earsdropper should get the public key hash only, and receiver only need an inditcator that he could decrypt this message.
         /// </summary>
         /// <returns></returns>
         public (byte[] hash, byte[] salt) GetPublicKeySaltedHash()

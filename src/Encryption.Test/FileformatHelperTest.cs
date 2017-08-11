@@ -63,16 +63,16 @@ namespace EncryptionSuite.Encryption.Test
                     RawFileAccessor.Write(stream, inputData, value);
                 }
             }
-            var fileMetaInfo = new FileCargo
+            var metaInformation = new MetaInformation
             {
-                DerivationSettings = PasswordDerivationSettings.Create(),
+                PasswordDerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
-                SecretInformationData = Random.CreateData(1024)
+                SecretInformationEncrypted = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                RawFileAccessor.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, metaInformation);
             }
 
             int metaPosition = 0;
@@ -105,18 +105,18 @@ namespace EncryptionSuite.Encryption.Test
                 Hmac = Random.CreateData(RawFileAccessor.Positions[RawFileAccessor.Field.Hmac].length),
                 Version = Random.CreateData(RawFileAccessor.Positions[RawFileAccessor.Field.Version].length),
                 Data = Random.CreateData(1024),
-                InformationContainer = new FileCargo
+                MetaInformation = new MetaInformation
                 {
-                    DerivationSettings = PasswordDerivationSettings.Create(),
+                    PasswordDerivationSettings = PasswordDerivationSettings.Create(),
                     EllipticCurveEncryptionInformation = null,
-                    SecretInformationData = Random.CreateData(8)
+                    SecretInformationEncrypted = Random.CreateData(8)
                 }
             };
 
             using (var stream = File.Open(this.OutputFile, FileMode.OpenOrCreate))
             {
                 RawFileAccessor.Init(stream);
-                RawFileAccessor.WriteMeta(stream, testData.InformationContainer);
+                RawFileAccessor.WriteMeta(stream, testData.MetaInformation);
                 RawFileAccessor.SeekToMainData(stream);
                 new MemoryStream(testData.Data).CopyTo(stream);
                 RawFileAccessor.Write(stream, testData.Iv, RawFileAccessor.Field.InitializationVector);
@@ -130,10 +130,10 @@ namespace EncryptionSuite.Encryption.Test
             byte[] iv;
             byte[] hmac;
             byte[] data;
-            FileCargo fileCargo;
+            MetaInformation metaInformation;
             using (var stream = File.Open(this.OutputFile, FileMode.OpenOrCreate))
             {
-                fileCargo = RawFileAccessor.ReadMeta(stream);
+                metaInformation = RawFileAccessor.ReadMeta(stream);
                 iv = RawFileAccessor.Read(stream, RawFileAccessor.Field.InitializationVector);
                 hmac = RawFileAccessor.Read(stream, RawFileAccessor.Field.Hmac);
                 RawFileAccessor.SeekToMainData(stream);
@@ -151,7 +151,7 @@ namespace EncryptionSuite.Encryption.Test
             Assert.That(hmac, Is.EquivalentTo(testData.Hmac));
             Assert.That(data, Is.EquivalentTo(testData.Data));
 
-            Assert.That(JsonConvert.SerializeObject(fileCargo), Is.EquivalentTo(JsonConvert.SerializeObject(testData.InformationContainer)));
+            Assert.That(JsonConvert.SerializeObject(metaInformation), Is.EquivalentTo(JsonConvert.SerializeObject(testData.MetaInformation)));
 
             #endregion
         }
@@ -161,16 +161,16 @@ namespace EncryptionSuite.Encryption.Test
         {
             EllipticCurveCryptographer.CreateKeyPair(false);
 
-            var fileMetaInfo = new FileCargo
+            var metaInformation = new MetaInformation
             {
-                DerivationSettings = PasswordDerivationSettings.Create(),
+                PasswordDerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
-                SecretInformationData = Random.CreateData(1024)
+                SecretInformationEncrypted = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                RawFileAccessor.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, metaInformation);
             }
         }
 
@@ -180,25 +180,25 @@ namespace EncryptionSuite.Encryption.Test
         {
             EllipticCurveCryptographer.CreateKeyPair(false);
 
-            var fileMetaInfo = new FileCargo
+            var metaInformation = new MetaInformation
             {
-                DerivationSettings = PasswordDerivationSettings.Create(),
+                PasswordDerivationSettings = PasswordDerivationSettings.Create(),
                 EllipticCurveEncryptionInformation = null,
-                SecretInformationData = Random.CreateData(1024)
+                SecretInformationEncrypted = Random.CreateData(1024)
             };
 
             using (var output = File.OpenWrite(this.OutputFile))
             {
-                RawFileAccessor.WriteMeta(output, fileMetaInfo);
+                RawFileAccessor.WriteMeta(output, metaInformation);
             }
 
-           FileCargo result;
+           MetaInformation result;
             using (var output = File.OpenRead(this.OutputFile))
             {
                 result = RawFileAccessor.ReadMeta(output);
             }
 
-            Assert.That(JsonConvert.SerializeObject(fileMetaInfo), Is.EqualTo(JsonConvert.SerializeObject(result)));
+            Assert.That(JsonConvert.SerializeObject(metaInformation), Is.EqualTo(JsonConvert.SerializeObject(result)));
         }
 
         [Test]

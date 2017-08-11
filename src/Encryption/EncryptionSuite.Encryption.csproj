@@ -50,7 +50,7 @@
     <Compile Include="PlainTypes\DecryptInternalParameter.cs" />
     <Compile Include="PlainTypes\DerivedSecret.cs" />
     <Compile Include="PlainTypes\EllipticCurveEncryptionInformation.cs" />
-    <Compile Include="PlainTypes\FileCargo.cs" />
+    <Compile Include="PlainTypes\MetaInformation.cs" />
     <Compile Include="FileOperation.cs" />
     <Compile Include="Hash.cs" />
     <Compile Include="EllipticCurveCryptographer.cs" />

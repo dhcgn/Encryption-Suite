@@ -120,16 +120,16 @@ namespace EncryptionSuite.Encryption
             var fileCargo = RawFileAccessor.ReadMeta(input);
 
             if (password != null)
-                secret = Hasher.CreateAesKeyFromPassword(password, fileCargo.DerivationSettings.Salt, fileCargo.DerivationSettings.Iterations);
+                secret = Hasher.CreateAesKeyFromPassword(password, fileCargo.PasswordDerivationSettings.Salt, fileCargo.PasswordDerivationSettings.Iterations);
 
             if (parameter?.EllipticCurveDeriveKeyAction != null)
                 secret = parameter?.EllipticCurveDeriveKeyAction(fileCargo.EllipticCurveEncryptionInformation);
 
             SecretInformation decryptedSecretInfo = null;
-            if (fileCargo.SecretInformationData != null)
+            if (fileCargo.SecretInformationEncrypted != null)
             {
                 var memoryStream = new MemoryStream();
-                DecryptInternal(new MemoryStream(fileCargo.SecretInformationData), memoryStream, secret, null, null);
+                DecryptInternal(new MemoryStream(fileCargo.SecretInformationEncrypted), memoryStream, secret, null, null);
                 decryptedSecretInfo = SecretInformation.FromProtoBufData(memoryStream.ToArray());
             }
 
@@ -158,15 +158,15 @@ namespace EncryptionSuite.Encryption
 
                 secretInformationEncryptedData = secretInformation.ToEncyptedData(secretKey);
             }
-            var fileMetaInfo = new FileCargo
+            var metaInformation = new MetaInformation
             {
-                DerivationSettings = parameter?.PasswordDerivationSettings,
-                SecretInformationData = secretInformationEncryptedData,
+                PasswordDerivationSettings = parameter?.PasswordDerivationSettings,
+                SecretInformationEncrypted = secretInformationEncryptedData,
                 EllipticCurveEncryptionInformation = parameter?.EllipticCurveEncryptionInformation,
             };
 
             RawFileAccessor.Init(output);
-            RawFileAccessor.WriteMeta(output, fileMetaInfo);
+            RawFileAccessor.WriteMeta(output, metaInformation);
             RawFileAccessor.SeekToMainData(output);
 
             var result = EncryptRaw(input, output, secretKey, parameter?.Progress, parameter?.IsCanceled);

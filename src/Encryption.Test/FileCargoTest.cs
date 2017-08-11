@@ -13,9 +13,9 @@ namespace EncryptionSuite.Encryption.Test
     public class GetProtoTest
     {
         [Test]
-        public void GetProto_FileCargo()
+        public void GetProto_MetaInformation()
         {
-            var proto = ProtoBuf.Serializer.GetProto<FileCargo>();
+            var proto = ProtoBuf.Serializer.GetProto<MetaInformation>();
             Console.Out.WriteLine(proto);
         }
 
