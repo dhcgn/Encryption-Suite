@@ -25,6 +25,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncryptionSuite.Encryption.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncryptionSuite.Encryption.Hybrid.Test", "src\Encryption.Hybrid.Test\EncryptionSuite.Encryption.Hybrid.Test.csproj", "{5844CB05-E5DF-410D-B1DE-64F4DE8D2078}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{395FF762-0A32-4BD8-94BC-61C717179CA8}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
