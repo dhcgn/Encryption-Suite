@@ -67,5 +67,8 @@
       <Name>EncryptionSuite.Contract</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="MetaInformation.cd" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,5 +1,5 @@
 # Encryption-Suite
-An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION!
+An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION YET!
 
 ## Features
 
@@ -19,7 +19,9 @@ An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION!
 | MetaInfo       | variable |
 | Content        | variable |
 
-### meta proto description
+### MetaInfo proto
+
+![Class Diagram MetaInformation](docs\ClassDiagramMetaInformation.png)
 
 ```proto
 message MetaInformation {
@@ -27,37 +29,49 @@ message MetaInformation {
    optional bytes SecretInformationEncrypted = 2;
    optional EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation = 3;
 }
+```
 
-	message PasswordDerivationSettings {
-	   required bytes Salt = 1;
-	   required int32 Iterations = 2;
-	}
+#### MetaInformation types
 
-	// Encrypted bytes set to SecretInformationEncrypted
-	message SecretInformation {
-	   optional string Filename = 1;
-	}
+```proto
+message PasswordDerivationSettings {
+	required bytes Salt = 1;
+	required int32 Iterations = 2;
+}
 
-	message EllipticCurveEncryptionInformation {
-	   repeated DerivedSecret DerivedSecrets = 1;
-	   required EcKeyPair EphemeralKey = 2;
-	}
+// Encrypted bytes set to SecretInformationEncrypted
+message SecretInformation {
+	optional string Filename = 1;
+}
 
-		message DerivedSecret {
-		   required bytes PublicKeyHash = 1;
-		   required bytes PublicKeyHashSalt = 2;
-		   required bytes EncryptedSharedSecret = 3;
-		}
+message EllipticCurveEncryptionInformation {
+	repeated DerivedSecret DerivedSecrets = 1;
+	required EcKeyPair EphemeralKey = 2;
+}
+```
 
-		message EcKeyPair {
-		   optional bytes PrivateKey = 1;
-		   required PublicKey PublicKey = 2;
-		}
+#### EllipticCurveEncryptionInformation types
 
-			message PublicKey {
-			   required bytes Qx = 1;
-			   required bytes Qy = 2;
-			}
+```proto
+message DerivedSecret {
+	required bytes PublicKeyHash = 1;
+	required bytes PublicKeyHashSalt = 2;
+	required bytes EncryptedSharedSecret = 3;
+}
+
+message EcKeyPair {
+	optional bytes PrivateKey = 1;
+	required PublicKey PublicKey = 2;
+}
+```
+
+#### EcKeyPair type
+
+```proto
+message PublicKey {
+	required bytes Qx = 1;
+	required bytes Qy = 2;
+}
 ```
 
 See https://developers.google.com/protocol-buffers/docs/proto

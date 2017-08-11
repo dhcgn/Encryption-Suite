@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="EncryptionSuite.Encryption.MetaInformation">
+    <Position X="0.5" Y="3" Width="2.75" />
+    <AssociationLine Name="SecretInformationEncrypted" Type="System.Byte">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.075" Y="0.088" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAABAAAAAAABAAAAAAAAACAA=</HashCode>
+      <FileName>PlainTypes\MetaInformation.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="EllipticCurveEncryptionInformation" />
+      <Property Name="PasswordDerivationSettings" />
+      <Property Name="SecretInformationEncrypted" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="EncryptionSuite.Encryption.EllipticCurveEncryptionInformation">
+    <Position X="5.75" Y="0.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAEAAAAAAAAABAAA=</HashCode>
+      <FileName>PlainTypes\EllipticCurveEncryptionInformation.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="EphemeralKey" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="DerivedSecrets" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="EncryptionSuite.Encryption.PasswordDerivationSettings">
+    <Position X="5.75" Y="3" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAIAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlainTypes\PasswordDerivationSettings.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EncryptionSuite.Encryption.SecretInformation">
+    <Position X="5.75" Y="5.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlainTypes\SecretInformation.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EncryptionSuite.Encryption.DerivedSecret">
+    <Position X="10" Y="0.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAEAAAA=</HashCode>
+      <FileName>PlainTypes\DerivedSecret.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EncryptionSuite.Contract.EcKeyPair">
+    <Position X="10" Y="2.5" Width="2.25" />
+    <TypeIdentifier />
+    <ShowAsAssociation>
+      <Property Name="PublicKey" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="EncryptionSuite.Contract.PublicKey">
+    <Position X="13.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier />
+  </Class>
+  <Struct Name="System.Byte" Collapsed="true">
+    <Position X="4" Y="5.75" Width="1.5" />
+    <TypeIdentifier />
+    <Lollipop Position="0.2" />
+  </Struct>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
