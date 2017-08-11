@@ -21,7 +21,7 @@ An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION Y
 
 ### MetaInfo proto
 
-![Class Diagram MetaInformation](docs\ClassDiagramMetaInformation.png)
+![Class Diagram MetaInformation](/docs/ClassDiagramMetaInformation.png)
 
 ```proto
 message MetaInformation {
