@@ -1,0 +1,29 @@
+
+
+message DerivedSecret {
+   required bytes PublicKeyHash = 1;
+   required bytes PublicKeyHashSalt = 2;
+   required bytes EncryptedSharedSecret = 3;
+}
+message EcKeyPair {
+   optional bytes PrivateKey = 1;
+   required PublicKey PublicKey = 2;
+}
+message EllipticCurveEncryptionInformation {
+   repeated DerivedSecret DerivedSecrets = 1;
+   required EcKeyPair EphemeralKey = 2;
+}
+message MetaInformation {
+   optional PasswordDerivationSettings PasswordDerivationSettings = 1;
+   optional bytes SecretInformationEncrypted = 2;
+   optional EllipticCurveEncryptionInformation EllipticCurveEncryptionInformation = 3;
+}
+message PasswordDerivationSettings {
+   required bytes Salt = 1;
+   required int32 Iterations = 2;
+}
+message PublicKey {
+   required bytes Qx = 1;
+   required bytes Qy = 2;
+}
+
