@@ -26,6 +26,13 @@ namespace EncryptionSuite.Encryption.Hybrid
             public Action<double> Progress { get; set; }
         }
 
+        public static void Encrypt(string inputPath, string outputPath, EncryptionParameter parameter)
+        {
+            using (var input = File.OpenRead(inputPath))
+            using (var output = File.Open(outputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                Encrypt(input, output, parameter);
+        }
+
         public static void Encrypt(Stream input, Stream output, EncryptionParameter parameter)
         {
             var secretKey = Random.CreateData(SymmetricEncryption.AesKeyLength + SymmetricEncryption.HmacKeyLength);
@@ -42,6 +49,13 @@ namespace EncryptionSuite.Encryption.Hybrid
             };
 
             SymmetricEncryption.EncryptInternal(input, output, secretKey, internalParameter);
+        }
+
+        public static DecryptInfo Decrypt(string inputPath, string outputPath, DecryptionParameter parameter)
+        {
+            using (var input = File.OpenRead(inputPath))
+            using (var output = File.Open(outputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                return Decrypt(input, output, parameter);
         }
 
         public static DecryptInfo Decrypt(Stream input, Stream output, DecryptionParameter parameter)

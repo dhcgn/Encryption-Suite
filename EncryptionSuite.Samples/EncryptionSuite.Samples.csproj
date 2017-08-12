@@ -48,6 +48,14 @@
     <Compile Include="SampleTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\src\Contract\EncryptionSuite.Contract.csproj">
+      <Project>{D47D8FD4-3D63-4172-8F12-470650DA225E}</Project>
+      <Name>EncryptionSuite.Contract</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\src\Encryption.Hybrid\EncryptionSuite.Encryption.Hybrid.csproj">
+      <Project>{A46B6AE4-6B8F-4E1F-BED8-5C359F35117C}</Project>
+      <Name>EncryptionSuite.Encryption.Hybrid</Name>
+    </ProjectReference>
     <ProjectReference Include="..\src\Encryption\EncryptionSuite.Encryption.csproj">
       <Project>{a324cce8-8e12-4cac-9981-1c0c4a5ce57c}</Project>
       <Name>EncryptionSuite.Encryption</Name>

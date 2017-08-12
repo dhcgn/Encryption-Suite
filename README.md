@@ -10,12 +10,36 @@ An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION Y
 
 ## Simple Sample
 
+### Symmetric Encryption
+
 ```c#
 var pwd = "MyPassword";
 File.WriteAllText(this.InputFile, "My Stuff");
 
 SymmetricEncryption.Encrypt(this.InputFile, this.EncryptedFile, pwd);
 var info = SymmetricEncryption.Decrypt(this.EncryptedFile, this.PlainFile, pwd);
+
+Console.Out.WriteLine(info.FileName);
+Console.Out.WriteLine(File.ReadAllText(this.PlainFile));
+```
+
+### Hybrid Encryption
+
+```c#
+File.WriteAllText(this.InputFile, "My Stuff");
+
+var encryptionParameter = new HybridEncryption.EncryptionParameter
+{
+	PublicKeys = new[] { myPrivateKey.ExportPublicKey(), bobPublicAns1Key.ExportPublicKey() },
+};
+
+HybridEncryption.Encrypt(this.InputFile, this.EncryptedFile, encryptionParameter);
+
+var decryptionParameter = new HybridEncryption.DecryptionParameter
+{
+	PrivateKey = myPrivateKey,
+};
+var info = HybridEncryption.Decrypt(this.EncryptedFile, this.PlainFile, decryptionParameter);
 
 Console.Out.WriteLine(info.FileName);
 Console.Out.WriteLine(File.ReadAllText(this.PlainFile));
