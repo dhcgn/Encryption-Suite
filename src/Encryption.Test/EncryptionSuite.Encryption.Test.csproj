@@ -126,9 +126,9 @@
     <Compile Include="EllipticCurveCryptograperTest.cs" />
     <Compile Include="EncryptInternalTest.cs" />
     <Compile Include="EncryptRawTest.cs" />
-    <Compile Include="FileCargoTest.cs" />
     <Compile Include="FileformatHelperTest.cs" />
     <Compile Include="FileOperationTest.cs" />
+    <Compile Include="GetProtoTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RandomTest.cs" />
     <Compile Include="SecretInformationTest.cs" />

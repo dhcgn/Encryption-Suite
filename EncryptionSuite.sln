@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{395FF762-0
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncryptionSuite.Samples", "EncryptionSuite.Samples\EncryptionSuite.Samples.csproj", "{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{5844CB05-E5DF-410D-B1DE-64F4DE8D2078}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5844CB05-E5DF-410D-B1DE-64F4DE8D2078}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5844CB05-E5DF-410D-B1DE-64F4DE8D2078}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,5 +92,6 @@ Global
 		{4810F571-AEC5-44BB-8409-482A1A9CEA42} = {4EC2DEF2-8A0C-446F-8D18-63556DFD7176}
 		{A46B6AE4-6B8F-4E1F-BED8-5C359F35117C} = {F8BEA1D3-AFD2-4F96-8E8B-0037F894255A}
 		{5844CB05-E5DF-410D-B1DE-64F4DE8D2078} = {4EC2DEF2-8A0C-446F-8D18-63556DFD7176}
+		{FC51C09B-DBFE-4906-9699-D9F0E9DE84BF} = {4EC2DEF2-8A0C-446F-8D18-63556DFD7176}
 	EndGlobalSection
 EndGlobal

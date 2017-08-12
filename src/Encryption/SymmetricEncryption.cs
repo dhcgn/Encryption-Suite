@@ -34,13 +34,26 @@ namespace EncryptionSuite.Encryption
             return DecryptInternal(input, output, null, password, decryptInternalParameter);
         }
 
+        public static DecryptInfo Decrypt(string inputPath, string outputPath, string password, Action<double> progress = null, Func<bool> isCanceled = null)
+        {
+            var decryptInternalParameter = new DecryptInternalParameter
+            {
+                Progress = progress,
+                IsCanceled = isCanceled,
+            };
+
+            using (var input = File.OpenRead(inputPath))
+            using (var output = File.Open(outputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                return DecryptInternal(input, output, null, password, decryptInternalParameter);
+        }
+
         public static void Encrypt(string inputPath, string outputPath, string password, string filename = null, Action<double> progress = null, Func<bool> isCanceled = null)
         {
             var derivationSettings = PasswordDerivationSettings.Create();
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
             var parameter = new EncryptInternalParameter
             {
-                Filename = filename,
+                Filename = filename ?? Path.GetFileName(inputPath),
                 PasswordDerivationSettings = derivationSettings,
                 EllipticCurveEncryptionInformation = null,
                 Progress = progress,
@@ -114,7 +127,7 @@ namespace EncryptionSuite.Encryption
 
         internal static DecryptInfo DecryptInternal(Stream input, Stream output, byte[] secret, string password, DecryptInternalParameter parameter)
         {
-            if(!RawFileAccessor.Verify(input))
+            if (!RawFileAccessor.Verify(input))
                 throw new CryptographicException("File signature is wrong");
 
             var fileCargo = RawFileAccessor.ReadMeta(input);
@@ -237,7 +250,7 @@ namespace EncryptionSuite.Encryption
             }
 
             if (!parameter.hmacHash.SequenceEqual(hmacHash))
-                throw new CryptographicException("HMAC Hash not as expected", 
+                throw new CryptographicException("HMAC Hash not as expected",
                     $"{Convert.ToBase64String(parameter.hmacHash)} not equal to {Convert.ToBase64String(hmacHash)}");
         }
 
@@ -320,6 +333,5 @@ namespace EncryptionSuite.Encryption
 
             return hash;
         }
-
     }
 }

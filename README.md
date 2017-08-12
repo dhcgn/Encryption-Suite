@@ -8,6 +8,19 @@ An aggregation of different cryptographic primitives. DO NOT USE IN PRODUCTION Y
   (No software-based elliptic curve handling is implemented)
 - Encryption with **AES-256**, ENCRYPT-THAN-MAC (HMAC SHA512), Derived Secret hashed with SHA 512 against weak bits
 
+## Simple Sample
+
+```c#
+var pwd = "MyPassword";
+File.WriteAllText(this.InputFile, "My Stuff");
+
+SymmetricEncryption.Encrypt(this.InputFile, this.EncryptedFile, pwd);
+var info = SymmetricEncryption.Decrypt(this.EncryptedFile, this.PlainFile, pwd);
+
+Console.Out.WriteLine(info.FileName);
+Console.Out.WriteLine(File.ReadAllText(this.PlainFile));
+```
+
 ## file format encryption
 
 | Name           | Length   |
