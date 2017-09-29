@@ -372,7 +372,7 @@ namespace EncryptionSuite.Encryption.Test
             }
             else
             {
-                Assert.That(info.FileName, Is.Not.Null, "Filename is Null.");
+                Assert.That(info.FileName, Is.Null, "Filename should be Null.");
             }
 
             Assert.That(data, Is.Not.EquivalentTo(File.ReadAllBytes(this.OutputFile)));

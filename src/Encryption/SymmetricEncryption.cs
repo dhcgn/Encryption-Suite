@@ -53,7 +53,7 @@ namespace EncryptionSuite.Encryption
             var secretKey = Hasher.CreateAesKeyFromPassword(password, derivationSettings.Salt, derivationSettings.Iterations);
             var parameter = new EncryptInternalParameter
             {
-                Filename = filename ?? Path.GetFileName(inputPath),
+                Filename = filename,
                 PasswordDerivationSettings = derivationSettings,
                 EllipticCurveEncryptionInformation = null,
                 Progress = progress,
