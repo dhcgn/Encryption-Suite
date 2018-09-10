@@ -2,7 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+
+[assembly:InternalsVisibleTo("EncryptionSuite.Encryption.Hybrid.Test")]
 
 namespace EncryptionSuite.Encryption
 {

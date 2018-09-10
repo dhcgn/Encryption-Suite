@@ -1,72 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5844CB05-E5DF-410D-B1DE-64F4DE8D2078}</ProjectGuid>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <ApplicationIcon />
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EncryptionSuite.Encryption.Hybrid.Test</RootNamespace>
-    <AssemblyName>EncryptionSuite.Encryption.Hybrid.Test</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <StartupObject />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=3.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="HybridEncryptionNitrokeyTest.cs" />
-    <Compile Include="HybridEncryptionTest.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestBase.cs" />
+    <ProjectReference Include="..\Encryption.Hybrid\EncryptionSuite.Encryption.Hybrid.csproj" />
+    <ProjectReference Include="..\TestBase\EncryptionSuite.TestHelper.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Contract\EncryptionSuite.Contract.csproj">
-      <Project>{D47D8FD4-3D63-4172-8F12-470650DA225E}</Project>
-      <Name>EncryptionSuite.Contract</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Encryption.Hybrid\EncryptionSuite.Encryption.Hybrid.csproj">
-      <Project>{A46B6AE4-6B8F-4E1F-BED8-5C359F35117C}</Project>
-      <Name>EncryptionSuite.Encryption.Hybrid</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Encryption.NitroKey\EncryptionSuite.Encryption.NitroKey.csproj">
-      <Project>{76666989-fa10-49e2-a5c5-43af0c5bf01c}</Project>
-      <Name>EncryptionSuite.Encryption.NitroKey</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Encryption\EncryptionSuite.Encryption.csproj">
-      <Project>{A324CCE8-8E12-4CAC-9981-1C0C4A5CE57C}</Project>
-      <Name>EncryptionSuite.Encryption</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TestBase\EncryptionSuite.TestHelper.csproj">
-      <Project>{4810f571-aec5-44bb-8409-482a1a9cea42}</Project>
-      <Name>EncryptionSuite.TestHelper</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

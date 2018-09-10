@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using EncryptionSuite.Contract;
+
+[assembly: InternalsVisibleTo("EncryptionSuite.Encryption.Test")]
 
 namespace EncryptionSuite.Encryption
 {

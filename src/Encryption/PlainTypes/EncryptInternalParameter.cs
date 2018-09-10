@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+
+[assembly:InternalsVisibleTo("EncryptionSuite.Encryption.Hybrid")]
 
 namespace EncryptionSuite.Encryption
 {
